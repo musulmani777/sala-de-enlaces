@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sala de Enlaces</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#395b61">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sala Enlaces">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>tailwind.config={theme:{extend:{colors:{indigo:{50:"#f2f6f7",100:"#e4ecee",200:"#c6d6d9",300:"#a2bdc1",400:"#7e9fa4",500:"#5c8287",600:"#476e74",700:"#395b61",800:"#2f4d53",900:"#273f44"}}}}};</script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);font-size:18px}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#f1f5f9;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+button,input,textarea,select{font:inherit}
+button{min-height:44px;touch-action:manipulation}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #facc15;outline-offset:3px}
+summary{min-height:44px;cursor:pointer}
+@media (prefers-color-scheme:dark){body{background:#0f172a;color-scheme:dark}}
+.sheet{transition:transform .25s ease}
+button{transition:background-color .18s ease,border-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease}
+button:active{transform:scale(.97)}
+.page-enter{animation:page-enter .28s ease-out both}
+.card{transition:box-shadow .2s ease,transform .2s ease}
+@media(hover:hover){.card:hover{transform:translateY(-1px);box-shadow:0 8px 20px #33415512}}
+body.booting{overflow:hidden}
+.boot-screen{position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#172554 0,#080b17 48%,#03040a 100%);color:#e0f2fe;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.boot-scene{display:flex;align-items:flex-end;gap:clamp(12px,4vw,36px);transform:scale(.72) translateY(28px);animation:boot-approach 3.2s cubic-bezier(.2,.7,.2,1) both}
+.pc-tower{position:relative;width:clamp(76px,20vw,132px);height:clamp(150px,38vw,230px);border:2px solid #334155;border-radius:18px;background:linear-gradient(145deg,#1e293b,#080b14 70%);box-shadow:inset 0 0 24px #020617,0 0 24px #7c3aed55}
+.pc-tower:before{position:absolute;inset:12px;border:1px solid #475569;border-radius:12px;content:""}
+.tower-light{position:absolute;top:24px;left:50%;width:9px;height:9px;border-radius:50%;background:#a78bfa;box-shadow:0 0 14px 5px #8b5cf6;transform:translateX(-50%);animation:tower-power .9s steps(2,end) infinite}
+.tower-rgb{position:absolute;inset:42px 25px 20px;border-radius:8px;background:linear-gradient(180deg,#22d3ee,#8b5cf6,#ec4899);opacity:.28;filter:blur(12px);animation:tower-rgb 2s linear infinite}
+.monitor-wrap{width:clamp(230px,65vw,480px)}
+.monitor{padding:10px;border:2px solid #475569;border-radius:18px;background:linear-gradient(145deg,#334155,#111827 55%);box-shadow:0 0 42px #38bdf855,0 24px 70px #000b}
+.monitor-screen{position:relative;display:grid;min-height:clamp(145px,40vw,280px);place-items:center;overflow:hidden;border:1px solid #38bdf866;border-radius:9px;background:#020617;box-shadow:inset 0 0 28px #020617}
+.monitor-screen:before{position:absolute;inset:0;background:linear-gradient(transparent 50%,#67e8f91a 50%);background-size:100% 5px;content:"";pointer-events:none}
+.boot-lines{width:72%;opacity:0;animation:screen-power .15s steps(2,end) .85s forwards;text-shadow:0 0 16px #22d3ee}
+.boot-title{display:block;color:#a5f3fc;font-size:clamp(12px,3vw,20px);font-weight:700;letter-spacing:.18em}
+.boot-status{display:block;margin-top:12px;color:#67e8f9;font-size:clamp(9px,2.2vw,13px);letter-spacing:.08em}
+.boot-progress{height:4px;margin-top:12px;overflow:hidden;background:#164e63}
+.boot-progress i{display:block;width:0;height:100%;background:#67e8f9;box-shadow:0 0 12px #22d3ee;animation:boot-progress 1.8s ease-in-out 1.05s forwards}
+.monitor-neck{width:28%;height:22px;margin:0 auto;background:linear-gradient(90deg,#1e293b,#64748b,#1e293b)}
+.monitor-base{width:48%;height:8px;margin:0 auto;border-radius:50%;background:#475569;box-shadow:0 4px 18px #38bdf844}
+.boot-caption{margin-top:24px;text-align:center;color:#cbd5e1;font-size:11px;letter-spacing:.2em;text-shadow:0 0 12px #38bdf8}
+.boot-skip{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));border:1px solid #94a3b866;border-radius:999px;background:#0f172acc;padding:10px 16px;color:#e2e8f0;font:inherit;font-size:16px}
+.boot-out{animation:boot-fade .45s ease forwards}
+@keyframes boot-approach{0%{transform:scale(.72) translateY(28px)}68%{transform:scale(.82) translateY(0)}100%{transform:scale(1.35) translateY(-8px)}}
+@keyframes tower-power{0%,45%{opacity:.3}46%,100%{opacity:1}}
+@keyframes tower-rgb{0%{filter:blur(12px) hue-rotate(0)}100%{filter:blur(12px) hue-rotate(100deg)}}
+@keyframes screen-power{0%{opacity:0}100%{opacity:1}}
+@keyframes boot-progress{0%{width:0}100%{width:100%}}
+@keyframes boot-fade{to{opacity:0;visibility:hidden}}
+@keyframes page-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.boot-scene,.tower-light,.tower-rgb,.boot-lines,.boot-progress i,.boot-out,.page-enter{animation:none}.boot-lines{opacity:1}button{transition:none}.card{transition:none}}
+</style>
+</head>
+<body class="text-slate-800 dark:text-slate-100">
+<div id="boot-screen" class="boot-screen" role="status" aria-label="Encendiendo Sala de Enlaces">
+ <div class="boot-scene">
+  <div class="pc-tower" aria-hidden="true"><span class="tower-light"></span><span class="tower-rgb"></span></div>
+  <div class="monitor-wrap">
+   <div class="monitor"><div class="monitor-screen"><div class="boot-lines"><span class="boot-title">SALA DE ENLACES</span><span class="boot-status">INICIANDO SISTEMA...</span><div class="boot-progress"><i></i></div></div></div></div>
+   <div class="monitor-neck"></div><div class="monitor-base"></div>
+  </div>
+ </div>
+ <div class="boot-caption">ENCENDIENDO EQUIPO</div>
+ <button id="boot-skip" class="boot-skip" type="button">Saltar animación</button>
+</div>
+<div id="app" aria-hidden="true" tabindex="-1" class="mx-auto min-h-screen max-w-md"></div>
+<div id="ov" class="fixed inset-0 z-40 hidden bg-black/50"></div>
+<section id="sh" hidden inert role="dialog" aria-modal="true" aria-label="Panel de la aplicación" aria-hidden="true" tabindex="-1" class="sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[92vh] max-w-md translate-y-full overflow-y-auto rounded-t-3xl bg-white p-4 dark:bg-slate-900" style="padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))"></section>
+<div id="toast" role="status" aria-live="polite" class="fixed left-1/2 top-16 z-[60] hidden -translate-x-1/2 whitespace-nowrap rounded-full bg-slate-900 px-4 py-2 text-sm text-white shadow-lg"></div>
+
+<script>
+/* ═════════ CONFIGURACIÓN ═════════ */
+const PLAZO = 3;                       // Días hábiles de anticipación según el reglamento
+const API_URL = "https://script.google.com/macros/s/AKfycbzsmRArA48oOvmxDR7K6EugjjDYrZpDdhSksaohC2VSHf-K6Ih9vfMIy4FZuQ3cnjkCcA/exec";
+const FERIADOS = ["2026-12-08","2026-12-25","2027-01-01"]; // Agrega aquí los feriados (AAAA-MM-DD); no cuentan como días hábiles
+
+/* ═════════ UTILIDADES ═════════ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const BL=[["08:00","08:45"],["08:45","09:30"],["09:45","10:30"],["10:30","11:15"],["11:30","12:15"],["12:15","13:00"],["14:00","14:45"],["14:45","15:30"]];
+const DN=["Lun","Mar","Mié","Jue","Vie"];
+const TIPOS=["No enciende","Mouse","Teclado","Pantalla","Red","Otro"];
+const iso=d=>d.toISOString().slice(0,10);
+const add=(f,n)=>{const d=new Date(f+"T12:00:00");d.setDate(d.getDate()+n);return iso(d)};
+const hoyD=new Date();hoyD.setHours(12,0,0,0);const HOY=iso(hoyD);
+const lunes0=add(HOY,-((hoyD.getDay()+6)%7));
+const fLarga=f=>new Date(f+"T12:00:00").toLocaleDateString("es-CL",{weekday:"long",day:"numeric",month:"long"});
+const fCorta=f=>new Date(f+"T12:00:00").toLocaleDateString("es-CL",{day:"numeric",month:"short"});
+const esHabil=f=>{const g=new Date(f+"T12:00:00").getDay();return g>0&&g<6&&!FERIADOS.includes(f)};
+const sumaHabiles=(f,n)=>{let c=0,x=f;while(c<n){x=add(x,1);if(esHabil(x))c++}return x};
+const MIN=sumaHabiles(HOY,PLAZO);   // Primera fecha que cumple el plazo regular
+const semDe=f=>Math.floor(Math.round((new Date(f+"T12:00:00")-new Date(lunes0+"T12:00:00"))/864e5)/7);
+const bloquePasado=(f,i)=>{if(f<HOY)return true;if(f>HOY)return false;const n=new Date(),h=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0");return h>=BL[i][0]};
+const iniciales=n=>n.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
+function toast(t){const x=$("#toast");x.textContent=t;x.classList.remove("hidden");setTimeout(()=>x.classList.add("hidden"),2400)}
+
+/* ═════════ DATOS (guardados en este dispositivo) ═════════ */
+let DB={reservas:[],id:100};
+try{const x=JSON.parse(localStorage.getItem("se_db_v2")||"null");if(x&&Array.isArray(x.reservas))DB=x}catch(e){}
+const RS=()=>DB.reservas;
+const guardar=()=>{try{localStorage.setItem("se_db_v2",JSON.stringify(DB));return true}catch(e){return false}};
+let occupiedRemote=new Set(),availabilityRange=null,availabilityLoading=false,availabilityError="",availabilityRequest=null;
+let pendingRequests={},lastRequestId=null;
+const enRangoDisponibilidad=f=>availabilityRange&&Date.now()-availabilityRange.actualizada<180000&&f>=availabilityRange.desde&&f<=availabilityRange.hasta;
+const ocupado=(f,b)=>{
+ const local=RS().find(r=>r.f===f&&r.b===b&&r.est!=="cancelada"&&r.backendId);
+ if(local)return local;
+ return enRangoDisponibilidad(f)&&occupiedRemote.has(`${f}:${b}`)?{f,b,remote:true,est:"pendiente"}:null;
+};
+async function postJson(payload){
+ const controller=window.AbortController?new AbortController():null;
+ const timer=controller?setTimeout(()=>controller.abort(),30000):null;
+ try{
+  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload),...(controller?{signal:controller.signal}:{})});
+  const text=await response.text();
+  let data;
+  try{data=JSON.parse(text)}catch(e){throw new Error(`El servidor respondió con un formato no válido (HTTP ${response.status}).`)}
+  if(!data||typeof data!=="object")throw new Error("El servidor respondió con datos no válidos.");
+  if(!response.ok)throw new Error(data.error||`Error de conexión con el servidor (HTTP ${response.status}).`);
+  if(data.ok===false)throw new Error(data.error||"El servidor rechazó la solicitud.");
+  return data;
+ }catch(e){
+  if(e.name==="AbortError")throw new Error("La conexión tardó demasiado. No se reenvió la solicitud; puedes reintentar con seguridad.");
+  if(e instanceof TypeError)throw new Error("No se pudo conectar con el servidor. Revisa tu conexión e inténtalo nuevamente.");
+  throw e;
+ }finally{if(timer)clearTimeout(timer)}
+}
+async function cargarDisponibilidad(desde=HOY,dias=45){
+ if(availabilityRequest){
+  await availabilityRequest;
+  if(enRangoDisponibilidad(desde)||availabilityError)return;
+ }
+ availabilityLoading=true;availabilityError="";
+ availabilityRequest=(async()=>{
+  try{
+   const data=await postJson({action:"disponibilidad",desde,dias});
+   if(!Array.isArray(data.ocupados))throw new Error("La respuesta de disponibilidad no contiene bloques ocupados válidos.");
+   occupiedRemote=new Set(data.ocupados.filter(x=>x&&/^\d{4}-\d{2}-\d{2}$/.test(x.f)&&Number.isInteger(Number(x.b))&&Number(x.b)>=1&&Number(x.b)<=8).map(x=>`${x.f}:${Number(x.b)}`));
+   availabilityRange={desde,hasta:add(desde,dias-1),actualizada:Date.now()};
+  }catch(e){availabilityError=e.message||"No se pudo consultar la disponibilidad."}
+  finally{availabilityLoading=false;availabilityRequest=null}
+ })();
+ return availabilityRequest;
+}
+function ensureAvailability(fecha){
+ if(enRangoDisponibilidad(fecha))return Promise.resolve();
+ return cargarDisponibilidad(fecha,45);
+}
+async function enviarSolicitud(tipo,payload,button,errorElement,successLabel){
+ const serializado=JSON.stringify({nombre:USER.nombre,...payload});
+ let pendiente=pendingRequests[tipo];
+ if(!pendiente||pendiente.serializado!==serializado){
+  const clave=window.crypto&&crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  pendiente={clave,serializado};pendingRequests[tipo]=pendiente;
+ }
+ const textoOriginal=button.textContent;
+ const sheet=$("#sh");
+ sheet.style.pointerEvents="none";
+ button.disabled=true;button.textContent="Enviando…";errorElement.textContent="";
+ try{
+  const data=await postJson({tipo,nombre:USER.nombre,clave:pendiente.clave,...payload});
+  if(data.ok!==true||data.id===undefined||data.id===null||data.id==="")throw new Error("El servidor no confirmó el envío con un ID de solicitud.");
+  sheet.style.pointerEvents="";
+  delete pendingRequests[tipo];
+  return data;
+ }catch(e){
+  sheet.style.pointerEvents="";
+  errorElement.textContent=e.message||"No se pudo enviar. Revisa la conexión e inténtalo nuevamente.";
+  button.disabled=false;button.textContent=successLabel||textoOriginal;
+  return null;
+ }
+}
+
+const nombreNormalizado=n=>(n||"").trim().replace(/\s+/g," ");
+const TAMAÑOS_TEXTO=[16,18,20,22];
+let textoPx=18;
+try{const guardado=Number(localStorage.getItem("se_font_size"));if(TAMAÑOS_TEXTO.includes(guardado))textoPx=guardado}catch(e){}
+document.documentElement.style.fontSize=`${textoPx}px`;
+function controlesTexto(oscuro=false){const tono=oscuro?"border-white/60 text-white":"border-indigo-700 text-indigo-800";return`<fieldset class="flex items-center justify-center gap-2"><legend class="sr-only">Tamaño del texto</legend><button type="button" data-font="-1" aria-label="Reducir tamaño del texto" ${textoPx===TAMAÑOS_TEXTO[0]?"disabled":""} class="rounded-xl border ${tono} px-3 py-2 text-base font-semibold disabled:opacity-50">A−</button><span class="min-w-20 text-center text-sm ${oscuro?"":"text-slate-700 dark:text-slate-200"}" aria-live="polite">Texto ${textoPx}px</span><button type="button" data-font="1" aria-label="Aumentar tamaño del texto" ${textoPx===TAMAÑOS_TEXTO[TAMAÑOS_TEXTO.length-1]?"disabled":""} class="rounded-xl border ${tono} px-3 py-2 text-base font-semibold disabled:opacity-50">A+</button></fieldset>`}
+function ajustarTexto(delta){
+ const nombre=$("#nombre");if(nombre)fm.nombre=nombre.value;
+ if(st.tab==="fallas"&&$("#ffpc0"))guardarIncidenciasReporte();
+ const indice=TAMAÑOS_TEXTO.indexOf(textoPx);
+ textoPx=TAMAÑOS_TEXTO[Math.max(0,Math.min(TAMAÑOS_TEXTO.length-1,indice+delta))];
+ document.documentElement.style.fontSize=`${textoPx}px`;
+ try{localStorage.setItem("se_font_size",String(textoPx))}catch(e){}
+ const posicion=window.scrollY;
+ render();
+ window.scrollTo(0,posicion);
+}
+function validaNombre(raw){
+ const nombre=nombreNormalizado(raw);
+ if(nombre.length<3)return{ok:false,msg:"Escribe el nombre del profesor (mínimo 3 caracteres)."};
+ if(nombre.length>100)return{ok:false,msg:"El nombre no puede superar 100 caracteres."};
+ return{ok:true,nombre};
+}
+
+/* ═════════ SESIÓN ═════════ */
+let USER=null,ME="";
+let st={logged:false,tab:"agenda",sem:0,dia:HOY};
+if(!esHabil(HOY)){let d=HOY;while(!esHabil(d))d=add(d,1);st.dia=d;st.sem=semDe(d)}
+try{const u=JSON.parse(localStorage.getItem("se_user_v2")||"null");if(u&&typeof u.nombre==="string"&&validaNombre(u.nombre).ok){USER={nombre:nombreNormalizado(u.nombre)};ME=USER.nombre.toLocaleLowerCase("es-CL");st.logged=true}}catch(e){}
+let fm={};
+
+/* ═════════ ESTILOS ═════════ */
+const EST={pendiente:["Pendiente","bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"],confirmada:["Confirmada","bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"],completada:["Completada","bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"],cancelada:["Cancelada","bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200"]};
+const badge=k=>`<span class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${EST[k][1]}">${EST[k][0]}</span>`;
+const card="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700";
+const inp="w-full rounded-xl border border-slate-300 bg-transparent px-3 py-2.5 text-base dark:border-slate-600";
+const chip="rounded-full border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600";
+const ON=" !bg-indigo-600 !text-white !border-indigo-600";
+const semDias=(s=st.sem)=>DN.map((n,i)=>{const f=add(lunes0,s*7+i);return{n,f,num:+f.slice(8)}});
+
+/* Aviso obligatorio de plazo */
+function avisoPlazo(){return`<div role="alert" class="rounded-2xl border-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500 dark:bg-amber-900/30 dark:text-amber-100">⚠️ <b>Reserva oficial:</b> El reglamento exige solicitar la sala por correo institucional con al menos <b>${PLAZO} días hábiles</b> de anticipación. Esta app no reemplaza el correo; la reserva queda confirmada cuando responda el Encargado de Enlaces.<div class="mt-1 text-xs opacity-80">Primera fecha disponible por vía regular en esta agenda: <b class="capitalize">${fLarga(MIN)}</b>.</div><a href="mailto:enlaces@escuelasantafilomena.cl?subject=Solicitud%20de%20uso%20de%20Sala%20de%20Computaci%C3%B3n" class="mt-2 inline-flex min-h-11 max-w-full break-all items-center rounded-xl bg-amber-100 px-3 font-semibold underline decoration-amber-700 underline-offset-2 dark:bg-amber-900/60 dark:text-amber-50">✉️ enlaces@escuelasantafilomena.cl</a></div>`}
+
+/* ═════════ LOGIN ═════════ */
+function vLogin(msg){
+ $("#app").innerHTML=`<div class="flex min-h-screen flex-col justify-between bg-gradient-to-b from-indigo-700 to-indigo-900 px-6 py-10 text-white">
+ <div class="pt-2"><div class="mb-6 flex justify-end">${controlesTexto(true)}</div><div class="text-center"><div class="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-3xl bg-white p-2 shadow-lg"><img src="images/logo-escuela.png" alt="Escuela Santa Filomena" class="h-full w-full object-contain"></div>
+ <h1 class="text-2xl font-bold">Sala de Enlaces</h1><p class="mt-1 text-indigo-200">Escuela Santa Filomena</p>
+ <p class="mt-6 text-base text-indigo-100">Reserva la sala y reporta fallas de equipos en segundos.</p></div></div>
+ <div class="space-y-3">${instBtn(false)}
+  <form id="lf" novalidate class="space-y-3">
+   <label for="nombre" class="block text-sm font-medium text-indigo-100">Nombre del profesor</label>
+   <input id="nombre" type="text" autocomplete="name" maxlength="100" placeholder="Nombre y apellido" value="${esc(fm.nombre||"")}" class="w-full rounded-2xl bg-white px-4 py-3.5 text-base text-slate-900 shadow-lg outline-none ring-2 ring-transparent focus:ring-emerald-400">
+   <div id="lerr" role="alert" class="rounded-xl bg-rose-500/90 px-3 py-2 text-center text-sm ${msg?"":"hidden"}">${msg||""}</div>
+   <button type="submit" class="w-full rounded-2xl bg-white py-4 text-lg font-semibold text-indigo-800 shadow-lg">Continuar</button>
+  </form>
+  <p class="text-center text-sm text-indigo-100">No necesitas contraseña. Escribe tu nombre y apellido. Tu nombre se usará para identificar tus solicitudes.</p>
+  <p class="text-center text-sm text-indigo-200">Si necesitas ayuda, pide apoyo al Encargado de Enlaces.</p>
+ </div></div>`;
+}
+
+/* ═════════ SHELL ═════════ */
+function shell(c){
+ const T=[["agenda","📅","Agenda"],["mis","🗒️","Mis reservas"],["fallas","🔧","Reportar"]];
+ $("#app").innerHTML=`<header class="sticky top-0 z-20 flex items-center gap-3 bg-indigo-700 px-4 py-3 text-white">
+  <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm"><img src="images/logo-escuela.png" alt="Escuela Santa Filomena" class="h-full w-full object-contain"></div>
+  <div class="min-w-0 flex-1"><div class="truncate text-base font-semibold">Hola, ${esc(USER.nombre.split(" ")[0])} 👋</div><div class="truncate text-sm text-indigo-200">Sala de Enlaces</div></div>
+  <button id="out" class="rounded-lg bg-indigo-800 px-3 py-2 text-sm">Cerrar sesión</button></header>
+ <main class="page-enter px-4 pb-28 pt-3"><div class="mb-3">${controlesTexto()}</div>${instBanner()}${c}</main>
+ ${st.tab==="agenda"?`<button id="fab" class="fixed bottom-20 right-4 z-30 rounded-full bg-indigo-600 px-5 py-3.5 text-sm font-semibold text-white shadow-lg" style="margin-bottom:env(safe-area-inset-bottom,0px)">＋ Reservar</button>`:""}
+ <nav aria-label="Navegación principal" class="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900" style="padding-bottom:env(safe-area-inset-bottom,0px)"><div class="mx-auto flex max-w-md">${T.map(t=>`<button data-t="${t[0]}" aria-current="${st.tab===t[0]?"page":"false"}" class="flex-1 py-2.5 text-center text-xs ${st.tab===t[0]?"font-semibold text-indigo-600 dark:text-indigo-300":"text-slate-500 dark:text-slate-400"}"><div class="text-xl leading-none">${t[1]}</div>${t[2]}</button>`).join("")}</div></nav>`;
+}
+
+/* ═════════ AGENDA ═════════ */
+function vAgenda(){
+ const ds=semDias(),a=ds[0].f,z=ds[4].f;
+ const strip=ds.map(d=>`<button data-dia="${d.f}" aria-pressed="${d.f===st.dia}" class="flex flex-1 flex-col items-center rounded-2xl py-2 ${d.f===st.dia?"bg-indigo-600 text-white":"bg-white text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700"}"><span class="text-xs">${d.n}</span><span class="text-lg font-semibold leading-tight">${d.num}</span><span class="text-[10px]">${d.f===HOY?"hoy":d.f===MIN?"1ª reg.":"&nbsp;"}</span></button>`).join("");
+ const urg=st.dia>=HOY&&st.dia<MIN;
+ const disponibilidadLista=enRangoDisponibilidad(st.dia);
+ let lista;
+ if(!esHabil(st.dia)){lista=`<div class="${card} text-center text-sm text-slate-500">Día no hábil (feriado). No hay reservas.</div>`}
+ else lista=BL.map((b,i)=>{
+  const r=ocupado(st.dia,i+1),pas=bloquePasado(st.dia,i),hora=`<div class="w-14 shrink-0 text-xs leading-tight text-slate-500 dark:text-slate-400"><b class="text-sm text-slate-800 dark:text-slate-100">${b[0]}</b><br>Bloque ${i+1}</div>`;
+  if(r){if(r.remote)return`<div class="${card} flex items-center gap-3">${hora}<div class="flex-1 text-base font-medium text-slate-600 dark:text-slate-300">Horario ocupado</div></div>`;const mia=r.e===ME;return`<div class="${card} flex items-center gap-3 ${mia?"!ring-2 !ring-indigo-500":""}">${hora}<div class="min-w-0 flex-1"><div class="truncate text-sm font-medium">${esc(r.curso)} · ${mia?"Tú":esc(r.doc)}</div><div class="text-xs text-slate-500 dark:text-slate-400">${r.pcs} computadores${r.esp?" · ⚡ solicitud especial":""}</div></div>${badge(r.est)}</div>`}
+  if(!disponibilidadLista)return`<div class="${card} flex items-center gap-3 opacity-60">${hora}<span class="flex-1 text-sm text-slate-500">${availabilityLoading?"Consultando disponibilidad…":"Disponibilidad sin confirmar"}</span></div>`;
+  return`<button ${pas?"disabled":""} data-res="${i+1}" class="flex w-full items-center gap-3 rounded-2xl border-2 border-dashed ${urg&&!pas?"border-amber-300 dark:border-amber-600":"border-slate-300 dark:border-slate-600"} p-3.5 text-left ${pas?"opacity-40":""}">${hora}<span class="flex-1 text-sm ${urg?"text-amber-700 dark:text-amber-300":"text-emerald-700 dark:text-emerald-300"}">${urg?"Libre · fuera de plazo":"Libre"}</span>${pas?"":`<span class="text-sm font-semibold text-indigo-600 dark:text-indigo-300">${urg?"Pedir evaluación":"Reservar"} ›</span>`}</button>`}).join("");
+ return`${!disponibilidadLista?`<div role="status" class="mb-3 rounded-xl ${availabilityError?"bg-rose-50 text-rose-800 dark:bg-rose-900/30 dark:text-rose-100":"bg-indigo-50 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-100"} p-3 text-sm">${availabilityError?`${esc(availabilityError)} <button id="retryAvailability" class="ml-1 font-semibold underline">Reintentar consulta</button>`:availabilityLoading?"Consultando disponibilidad…":""}</div>`:""}<div class="mb-3">${avisoPlazo()}</div>
+ <div class="${card} mb-3 text-sm"><b>¿Cómo reservar?</b><ol class="mt-1 list-decimal space-y-1 pl-5"><li>Elige un día y un horario libre en el calendario.</li><li>Completa curso, asignatura y computadores.</li><li>Envía la solicitud en la app y formalízala por correo institucional, como exige el reglamento.</li></ol><p class="mt-2">La app no confirma la reserva: espera la respuesta del Encargado de Enlaces desde el correo institucional.</p></div>
+ <details class="${card} mb-3"><summary class="flex items-center justify-between gap-2 font-semibold text-slate-800 dark:text-slate-100">Checklist del docente para la clase <span aria-hidden="true" class="text-indigo-600">⌄</span></summary>
+  <div class="mt-2 space-y-3 text-sm">
+   <div class="rounded-xl bg-sky-50 p-3 text-sky-950 dark:bg-sky-900/30 dark:text-sky-100"><b>Antes de empezar</b><ul class="mt-1 list-disc space-y-1 pl-5"><li>Ingresa con autorización del Encargado o en presencia del docente responsable.</li><li>Registra la sesión en la Bitácora de uso de Recursos Enlaces al inicio.</li><li>Permanece en la sala y supervisa activamente a los estudiantes.</li><li>Respeta el aforo: máximo 35 estudiantes y 40 personas en total; mantén despejadas las vías de evacuación.</li></ul></div>
+   <div class="rounded-xl bg-emerald-50 p-3 text-emerald-950 dark:bg-emerald-900/30 dark:text-emerald-100"><b>Durante la clase</b><ul class="mt-1 list-disc space-y-1 pl-5"><li>No se permite comer ni beber; los estudiantes deben ingresar con las manos limpias.</li><li>No se deben instalar programas ni conectar USB/dispositivos externos sin revisión del Encargado.</li><li>No se deben desconectar, apagar o reiniciar equipos sin autorización. No manipules tableros eléctricos, enchufes, canaletas ni cableado.</li><li>Usa solo sitios y recursos de la planificación. Fotos, grabaciones y cámaras requieren instrucción explícita del docente.</li><li>Protege la privacidad: no compartas credenciales ni accedas a archivos o cuentas de otras personas; no se permite el ciberacoso ni la suplantación.</li></ul></div>
+   <div class="rounded-xl bg-amber-50 p-3 text-amber-950 dark:bg-amber-900/30 dark:text-amber-100"><b>Al terminar o ante un problema</b><ul class="mt-1 list-disc space-y-1 pl-5"><li>Indica a los estudiantes cerrar sus cuentas, dejar la pantalla inicial, ordenar la silla y limpiar el puesto.</li><li>Informa a la brevedad cualquier falla, daño o incidencia al Encargado y deja registro.</li><li>Si no usarás la sala, avisa cuanto antes al correo institucional.</li></ul></div>
+   <p class="text-xs text-slate-600 dark:text-slate-300">Tablets y notebooks: solicitar con 5 días hábiles de anticipación. Instalación o prueba de software: solicitar con 10 días hábiles.</p>
+   <a href="mailto:enlaces@escuelasantafilomena.cl" class="inline-flex min-h-11 max-w-full break-all items-center rounded-xl bg-indigo-100 px-3 font-semibold text-indigo-800 underline dark:bg-indigo-900/50 dark:text-indigo-100">✉️ enlaces@escuelasantafilomena.cl</a>
+  </div>
+ </details>
+ <div class="mb-2 flex items-center justify-between"><button data-sem="-1" aria-label="Semana anterior" class="h-10 w-10 rounded-full bg-white text-xl ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">‹</button><b class="text-sm">${fCorta(a)} – ${fCorta(z)}</b><button data-sem="1" aria-label="Semana siguiente" class="h-10 w-10 rounded-full bg-white text-xl ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">›</button></div>
+ <div class="mb-3 flex gap-1.5">${strip}</div><h2 class="mb-2 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">${fLarga(st.dia)}</h2><div class="space-y-2">${lista}</div>`;
+}
+
+/* ═════════ MIS RESERVAS ═════════ */
+function vMis(){
+ const mis=RS().filter(r=>r.e===ME).sort((a,b)=>b.f.localeCompare(a.f)||b.b-a.b);
+ const prox=mis.filter(r=>r.f>=HOY&&r.est!=="cancelada"&&r.est!=="completada");
+ const card1=r=>{
+  const puedeCerrar=r.est==="confirmada"&&r.f<=HOY&&!r.cierre;
+  return`<div class="${card}"><div class="flex items-start justify-between gap-2"><div><div class="text-sm font-semibold capitalize">${fLarga(r.f)}</div><div class="text-xs text-slate-500 dark:text-slate-400">Bloque ${r.b} (${BL[r.b-1][0]}) · ${esc(r.curso)} · ${r.pcs} PCs</div></div>${badge(r.est)}</div>
+  ${r.esp?`<div class="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-900/30 dark:text-amber-100">⚡ <b>Solicitud de excepción:</b> ${esc(r.just)}</div>`:""}
+  ${puedeCerrar?`<button data-cierre="${r.id}" class="mt-3 w-full rounded-xl bg-indigo-600 py-3 text-base font-semibold text-white">📝 Registrar cierre en este teléfono</button>`:""}
+  ${r.cierre?`<div class="mt-2 text-sm text-emerald-700 dark:text-emerald-300">✓ Cierre guardado en este teléfono</div>`:""}</div>`};
+ return`<div class="${card} mb-4 space-y-2 text-sm"><b>Importante</b><p>Las reservas que ves se guardan en este teléfono. Si lo cambias o reinstalas la app, podrían no aparecer aquí.</p><p>Esta versión no envía cancelaciones ni cierres al Encargado. Para cancelar una reserva o informar un cierre, comunícate directamente con él.</p></div><h2 class="mb-2 text-lg font-semibold">Próximas</h2><div class="mb-5 space-y-2">${prox.length?prox.map(card1).join(""):`<p class="py-4 text-center text-base text-slate-600 dark:text-slate-300">Aún no tienes reservas próximas.</p>`}</div>
+ <h2 class="mb-2 text-lg font-semibold">Historial</h2><div class="space-y-2">${mis.filter(r=>!prox.includes(r)).map(card1).join("")||`<p class="text-base text-slate-600 dark:text-slate-300">Aún no hay historial.</p>`}</div>`;
+}
+
+/* ═════════ REPORTE DE FALLAS ═════════ */
+function bloqueFalla(p,index=null){
+ const suffix=index===null?"":String(index),row=index===null?fm:(fm.incidencias||[])[index]||{};
+ const tipoData=index===null?"":`data-fidx="${index}"`;
+ return`<div class="space-y-3"><div class="flex gap-2"><input id="${p}pc${suffix}" aria-label="Número del computador, del 1 al 40" type="number" min="1" max="40" inputmode="numeric" placeholder="N° PC" value="${esc(row[p+"pc"]||row.pc||"")}" class="${inp} !w-24"><div class="flex flex-1 flex-wrap content-start gap-1.5">${TIPOS.map(t=>`<button type="button" data-tp="${t}" aria-pressed="${row.tipo===t}" ${tipoData} class="${chip}${row.tipo===t?ON:""}">${t}</button>`).join("")}</div></div>
+ <textarea id="${p}det${suffix}" aria-label="Describe la falla" rows="2" placeholder="Describe el problema, por ejemplo: PC 04 con teclado dañado" class="${inp}">${esc(row[p+"det"]||row.detalle||"")}</textarea></div>`;
+}
+function vFallas(){
+ const incidencias=fm.incidencias||[{}];
+ return`<h2 class="mb-1 text-lg font-semibold">Reportar una falla u observación</h2><p class="mb-3 text-base text-slate-600 dark:text-slate-300">Avisa al Encargado de Enlaces sobre cualquier equipo con problemas. Indica el número del computador y explica el problema con tus palabras; no necesitas usar términos técnicos.</p>
+ <div class="${card} space-y-3">${incidencias.map((_,i)=>`<div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700"><div class="mb-2 flex items-center justify-between"><b class="text-sm">Incidencia ${i+1}</b>${incidencias.length>1?`<button type="button" data-delinc="${i}" class="text-sm text-rose-600">Quitar</button>`:""}</div>${bloqueFalla("ff",i)}</div>`).join("")}
+ ${incidencias.length<10?`<button type="button" data-addinc class="w-full rounded-xl border border-dashed border-slate-400 py-2 text-sm">＋ Agregar otra incidencia (${incidencias.length}/10)</button>`:"<p class='text-xs text-slate-500'>Máximo de 10 incidencias por solicitud.</p>"}
+ <textarea id="obsF" aria-label="Observación general, opcional" rows="2" placeholder="Observación general (opcional)" class="${inp}">${esc(fm.obsF||"")}</textarea>
+ <div id="ferr" role="alert" class="min-h-[1.25rem] text-sm text-rose-600"></div>
+ <button id="sendF" class="w-full rounded-xl bg-rose-600 py-3 text-sm font-semibold text-white">Enviar reporte</button></div>`;
+}
+function guardarIncidenciasReporte(){
+ const rows=fm.incidencias||[{}];
+ rows.forEach((row,i)=>{
+  row.pc=$("#ffpc"+i)?.value||"";
+  row.detalle=$("#ffdet"+i)?.value||"";
+ });
+ fm.incidencias=rows;fm.obsF=$("#obsF")?.value||fm.obsF||"";
+}
+function leerFalla(p,index=null){
+ const suffix=index===null?"":String(index),row=index===null?fm:(fm.incidencias||[])[index]||{};
+ const pc=Number($("#"+p+"pc"+suffix)?.value||row[p+"pc"]||row.pc||0);
+ const det=($("#"+p+"det"+suffix)?.value||row[p+"det"]||row.detalle||"").trim();
+ return{equipo_numero:pc,tipo:row.tipo||"Otro",detalle:det};
+}
+
+/* ═════════ HOJAS (reserva, cierre, confirmación) ═════════ */
+let focoAnterior=null,cierreSheetTimer=null;
+function abrirSheet(){const sheet=$("#sh");if(cierreSheetTimer)clearTimeout(cierreSheetTimer);if($("#ov").classList.contains("hidden"))focoAnterior=document.activeElement;$("#ov").classList.remove("hidden");sheet.hidden=false;sheet.inert=false;sheet.setAttribute("aria-hidden","false");requestAnimationFrame(()=>{if(!sheet.hidden)sheet.style.transform="translateY(0)"});sheet.focus()}
+function cerrar(){const sheet=$("#sh");sheet.style.transform="translateY(100%)";sheet.inert=true;sheet.setAttribute("aria-hidden","true");$("#ov").classList.add("hidden");const destino=focoAnterior&&focoAnterior.isConnected?focoAnterior:$("#app");if(destino)destino.focus();focoAnterior=null;cierreSheetTimer=setTimeout(()=>{if(sheet.getAttribute("aria-hidden")==="true")sheet.hidden=true},260)}
+const grip=`<div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300 dark:bg-slate-600"></div>`;
+
+function sheetRes(){
+ const ds=semDias(fm.sem);
+ const sel=ds.map(d=>{const dis=d.f<HOY||!esHabil(d.f);return`<button data-fd="${d.f}" ${dis?"disabled":""} class="min-w-[3.2rem] flex-1 rounded-xl py-2 text-sm ${d.f===fm.f?"bg-indigo-600 text-white":"bg-slate-100 dark:bg-slate-800"} ${dis?"opacity-40":""}">${d.n}<br><b>${d.num}</b>${!dis&&d.f<MIN?`<div class="text-[10px] leading-none">⚡</div>`:""}</button>`}).join("");
+ const disponibilidadLista=enRangoDisponibilidad(fm.f);
+ const bl=BL.map((b,i)=>{const bad=!disponibilidadLista||ocupado(fm.f,i+1)||bloquePasado(fm.f,i);return`<button data-fb="${i+1}" ${bad?"disabled":""} class="rounded-xl py-2 text-xs ${fm.b===i+1?"bg-indigo-600 text-white":"bg-slate-100 dark:bg-slate-800"} ${bad?"line-through opacity-40":""}"><b class="text-sm">B${i+1}</b><br>${b[0]}</button>`}).join("");
+ const fueraPlazo=fm.f<MIN;
+ $("#sh").innerHTML=`${grip}
+ <div class="mb-3 flex items-center justify-between"><h2 class="text-lg font-semibold">Nueva reserva</h2><button data-x aria-label="Cerrar" class="text-2xl leading-none text-slate-500">×</button></div>
+ <div class="mb-3">${avisoPlazo()}</div>
+ <p class="mb-3 rounded-xl bg-indigo-50 p-3 text-base text-indigo-900 dark:bg-indigo-900/30 dark:text-indigo-100">Elige un día y un horario libre. Completa el curso y la asignatura; después pulsa <b>Solicitar reserva</b>. La solicitud queda pendiente hasta que el Encargado la revise.</p>
+ <div class="mb-1 flex items-center justify-between text-xs font-medium text-slate-500"><span>Día</span><span class="flex items-center gap-1"><button data-fsem="-1" aria-label="Semana anterior" class="h-8 w-8 rounded-full bg-slate-100 text-lg dark:bg-slate-800">‹</button><span>${fCorta(ds[0].f)} – ${fCorta(ds[4].f)}</span><button data-fsem="1" aria-label="Semana siguiente" class="h-8 w-8 rounded-full bg-slate-100 text-lg dark:bg-slate-800">›</button></span></div>
+ <div class="mb-1 flex gap-1.5">${sel}</div>
+ <div class="mb-3 text-[11px] text-slate-500">⚡ = dentro del plazo reglamentario de ${PLAZO} días hábiles; una solicitud especial no garantiza autorización.</div>
+ ${fueraPlazo&&!fm.esp?`<div class="mb-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-800 dark:bg-rose-900/30 dark:text-rose-100">Esta fecha no cumple los ${PLAZO} días hábiles. Elige desde el <b class="capitalize">${fLarga(MIN)}</b>. Si necesitas solicitar una excepción, pide autorización por correo al Encargado; marcar un caso especial en la app no confirma la reserva.<button data-espon class="mt-2 block w-full rounded-lg bg-rose-600 py-2 text-sm font-semibold text-white">⚡ Solicitar evaluación especial</button></div>`:""}
+ ${!disponibilidadLista?`<div role="status" class="mb-2 rounded-xl ${availabilityError?"bg-rose-50 text-rose-800 dark:bg-rose-900/30 dark:text-rose-100":"bg-indigo-50 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-100"} p-2 text-xs">${availabilityError?`${esc(availabilityError)} <button id="retryAvailability" class="font-semibold underline">Reintentar</button>`:availabilityLoading?"Consultando disponibilidad…":""}</div>`:""}
+ <div class="mb-1 text-xs font-medium text-slate-500">Bloque</div><div class="mb-3 grid grid-cols-4 gap-1.5">${bl}</div>
+ <div class="mb-3 grid grid-cols-2 gap-3"><div><div class="mb-1 text-xs font-medium text-slate-500">Computadores</div><div class="flex items-center justify-between rounded-xl bg-slate-100 px-2 py-1.5 dark:bg-slate-800"><button data-pc="-1" aria-label="Quitar un computador" class="h-10 w-10 text-2xl">−</button><b class="text-lg">${fm.pcs}</b><button data-pc="1" aria-label="Agregar un computador" class="h-10 w-10 text-2xl">＋</button></div></div>
+ <div><div class="mb-1 text-xs font-medium text-slate-500">Curso</div> <input id="curso" aria-label="Curso" type="text" placeholder="Ejemplo: 5°B" value="${esc(fm.curso||"")}" class="${inp} !h-[3.25rem]"></div></div>
+ <input id="asig" aria-label="Asignatura" type="text" placeholder="Ejemplo: Tecnología" value="${esc(fm.asig||"")}" class="${inp} mb-3">
+ <textarea id="obs" aria-label="Observación para el Encargado, opcional" rows="2" placeholder="Observación para el Encargado (opcional)" class="${inp} mb-3">${esc(fm.obs||"")}</textarea>
+ <label class="mb-2 flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-medium text-amber-900 dark:border-amber-600 dark:bg-amber-900/20 dark:text-amber-100"><input id="chE" type="checkbox" ${fm.esp?"checked":""} class="h-5 w-5"> ⚡ Solicitar evaluación especial</label>
+ ${fm.esp?`<div class="mb-3 space-y-2 rounded-xl border-2 border-amber-400 p-3">
+  <div class="text-sm font-semibold">Justifica el motivo (obligatorio)</div>
+  <textarea id="just" aria-label="Motivo de la solicitud especial" rows="3" placeholder="Explica por qué solicitas una excepción" class="${inp}">${esc(fm.just||"")}</textarea>
+  <div class="text-xs text-amber-900 dark:text-amber-100">⚠️ Esta opción no está prevista como excepción en el reglamento y no autoriza la reserva. Solicita evaluación por correo institucional; cualquier uso requiere confirmación del Encargado de Enlaces.</div></div>`:""}
+ <label class="mb-2 flex items-center gap-2 text-sm"><input id="chF" type="checkbox" ${fm.falla?"checked":""} class="h-5 w-5"> Reportar una falla de equipo ahora</label>
+ ${fm.falla?`<div class="${card} mb-2">${bloqueFalla("rf")}</div>`:""}
+ <div id="err" role="alert" class="my-2 min-h-[1.25rem] text-sm text-rose-600"></div>
+ <button data-env class="w-full rounded-2xl bg-indigo-600 py-3.5 text-base font-semibold text-white">${fm.esp?"Enviar solicitud especial":"Solicitar reserva"}</button>`;
+}
+function abrirRes(b){
+ let f;
+ if(b)f=st.dia>=HOY?st.dia:HOY; else f=st.dia>=MIN?st.dia:MIN;
+ if(!esHabil(f))f=MIN;
+ fm={f,b:b&&!ocupado(f,b)?b:null,pcs:20,esp:f<MIN,just:"",falla:false,tipo:null,sem:semDe(f)};
+ const availability=ensureAvailability(f);
+ sheetRes();abrirSheet();
+ availability.then(()=>{if(!$("#ov").classList.contains("hidden")&&fm.f)sheetRes()});
+}
+function guardaCampos(){["curso","asig","obs","just","rfpc","rfdet"].forEach(k=>{const e=$("#"+k);if(e)fm[k]=e.value})}
+
+function sheetCierre(){
+ $("#sh").innerHTML=`${grip}
+ <div class="mb-1 flex items-center justify-between"><h2 class="text-lg font-semibold">Cierre de clase</h2><button data-x aria-label="Cerrar" class="text-2xl leading-none text-slate-500">×</button></div>
+ <p class="mb-3 text-sm capitalize text-slate-500">${fLarga(fm.r.f)} · Bloque ${fm.r.b} · ${esc(fm.r.curso)}</p>
+ <p class="mb-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/30 dark:text-amber-100">Este cierre se guarda solo en este teléfono; no se envía al Encargado. Para informar una falla, usa la sección <b>Reportar</b>.</p>
+ <div class="mb-1 text-xs font-medium text-slate-500">¿Cómo quedó la sala?</div>
+ <div class="mb-3 flex gap-2"><button data-ord="true" aria-pressed="${fm.ord===true}" class="${chip} flex-1 !py-2.5 !text-sm${fm.ord===true?ON:""}">✨ Ordenada y limpia</button><button data-ord="false" aria-pressed="${fm.ord===false}" class="${chip} flex-1 !py-2.5 !text-sm${fm.ord===false?ON:""}">🧹 Necesita aseo/orden</button></div>
+ <textarea id="obs" aria-label="Observaciones de la clase, opcional" rows="2" placeholder="Observaciones de la clase (opcional)" class="${inp} mb-3">${esc(fm.obs||"")}</textarea>
+ <div id="err" role="alert" class="my-2 min-h-[1.25rem] text-sm text-rose-600"></div>
+ <button data-envc class="w-full rounded-2xl bg-indigo-600 py-3.5 text-base font-semibold text-white">Guardar cierre en este teléfono</button>`;
+}
+function confirma(titulo,detalle,solicitudId=""){
+ $("#sh").innerHTML=`${grip}<div class="mb-2 text-center text-4xl">✅</div><h2 class="mb-1 text-center text-lg font-semibold">${titulo}</h2>
+ <p class="mb-4 text-center text-sm text-slate-500 dark:text-slate-400">${detalle}</p>
+ ${solicitudId?`<p class="mb-4 text-center text-xs text-slate-500 dark:text-slate-400">ID de solicitud: ${esc(solicitudId)}</p>`:""}
+ <button data-x class="w-full rounded-2xl bg-indigo-600 py-3.5 text-base font-semibold text-white">Listo</button>`;
+ abrirSheet();
+}
+
+/* ═════════ RENDER ═════════ */
+function render(){
+ if(!st.logged)return vLogin();
+ shell(st.tab==="agenda"?vAgenda():st.tab==="mis"?vMis():vFallas());
+}
+
+/* ═════════ EVENTOS ═════════ */
+document.addEventListener("submit",e=>{
+ if(e.target.id!=="lf")return;e.preventDefault();
+ const raw=$("#nombre").value;fm={nombre:raw};
+ const v=validaNombre(raw);
+ if(!v.ok)return vLogin(v.msg);
+ USER={nombre:v.nombre};ME=v.nombre.toLocaleLowerCase("es-CL");
+ let sesionNoGuardada=false;
+ try{localStorage.setItem("se_user_v2",JSON.stringify(USER))}catch(x){sesionNoGuardada=true}
+ fm={};st.logged=true;st.tab="agenda";
+ const request=cargarDisponibilidad(HOY);render();
+ if(sesionNoGuardada)toast("No se pudo guardar tu nombre; tendrás que escribirlo al volver a abrir la app.");
+ request.then(()=>{if(st.logged)render()});
+});
+
+document.addEventListener("click",async e=>{
+ if(e.target.id==="ov")return cerrar();
+ const t=e.target.closest("button");if(!t)return;const d=t.dataset,id=t.id;
+ if("font" in d){ajustarTexto(+d.font);return}
+ if(id==="out"){st.logged=false;USER=null;ME="";fm={};try{localStorage.removeItem("se_user_v2")}catch(x){}cerrar();render()}
+ else if(id==="retryAvailability"){const f=fm.f||st.dia,request=cargarDisponibilidad(f);if($("#ov").classList.contains("hidden"))render();else sheetRes();await request;if($("#ov").classList.contains("hidden"))render();else sheetRes()}
+ else if(d.t){st.tab=d.t;fm={};if(d.t==="fallas")fm.incidencias=[{}];render();scrollTo(0,0)}
+ else if(d.dia){st.dia=d.dia;const request=ensureAvailability(st.dia);render();request.then(()=>{if(st.tab==="agenda")render()})}
+ else if(d.sem){st.sem+=+d.sem;st.dia=add(lunes0,st.sem*7);if(st.sem===0&&esHabil(HOY))st.dia=HOY;const request=ensureAvailability(st.dia);render();request.then(()=>{if(st.tab==="agenda")render()})}
+ else if(d.res)abrirRes(+d.res);
+ else if(id==="fab")abrirRes();
+ else if("x" in d)cerrar();
+ else if(d.fsem){guardaCampos();fm.sem+=+d.fsem;sheetRes()}
+ else if(d.fd){guardaCampos();fm.f=d.fd;if(fm.f>=MIN)fm.esp=false;if(fm.b&&(ocupado(fm.f,fm.b)||bloquePasado(fm.f,fm.b-1)))fm.b=null;const request=ensureAvailability(fm.f);sheetRes();request.then(()=>{if(!$("#ov").classList.contains("hidden")&&fm.f===d.fd)sheetRes()})}
+ else if(d.fb){guardaCampos();fm.b=+d.fb;sheetRes()}
+ else if(d.pc){guardaCampos();fm.pcs=Math.min(30,Math.max(1,fm.pcs+ +d.pc));sheetRes()}
+ else if("espon" in d){guardaCampos();fm.esp=true;sheetRes()}
+ else if("addinc" in d){guardarIncidenciasReporte();if((fm.incidencias||[]).length<10)fm.incidencias.push({});render()}
+ else if(d.delinc!==undefined){guardarIncidenciasReporte();fm.incidencias.splice(+d.delinc,1);if(!fm.incidencias.length)fm.incidencias.push({});render()}
+ else if(d.tp){
+  if(d.fidx!==undefined){guardarIncidenciasReporte();const i=+d.fidx,row=fm.incidencias[i];row.tipo=row.tipo===d.tp?null:d.tp;render()}
+  else{fm.tipo=fm.tipo===d.tp?null:d.tp;t.parentElement.querySelectorAll("button").forEach(x=>{ON.trim().split(" ").forEach(c=>x.classList.remove(c));x.setAttribute("aria-pressed","false")});if(fm.tipo){ON.trim().split(" ").forEach(c=>t.classList.add(c));t.setAttribute("aria-pressed","true")}}
+ }
+ else if(d.ord){fm.ord=d.ord==="true";guardaCampos();sheetCierre()}
+ else if(d.cierre){fm={r:RS().find(x=>x.id==d.cierre),ord:null,falla:false,tipo:null};sheetCierre();abrirSheet()}
+ else if(id==="sendF"){
+  guardarIncidenciasReporte();
+  const rows=fm.incidencias||[],incidencias=[];
+  if(!rows.length)return $("#ferr").textContent="Agrega al menos una incidencia.";
+  for(let i=0;i<rows.length;i++){
+   const f=leerFalla("ff",i);
+   if(!Number.isInteger(f.equipo_numero)||f.equipo_numero<1||f.equipo_numero>40)return $("#ferr").textContent=`El número de equipo de la incidencia ${i+1} debe estar entre 1 y 40.`;
+   if(!f.detalle)return $("#ferr").textContent=`Completa el detalle de la incidencia ${i+1}.`;
+   incidencias.push(f);
+  }
+  const data=await enviarSolicitud("FALLA",{observacion:(fm.obsF||"").trim(),incidencias},t,$("#ferr"),"Enviar reporte");
+  if(!data)return;
+  lastRequestId=data.id;fm={};render();confirma("Falla reportada","Solicitud enviada correctamente.",lastRequestId);
+ }
+ else if("env" in d){
+  guardaCampos();const err=$("#err"),curso=(fm.curso||"").trim(),asig=(fm.asig||"").trim();
+  if(!esHabil(fm.f))return err.textContent="Elige un día hábil.";
+  if(!fm.b)return err.textContent="Elige un bloque.";
+  if(!Number.isInteger(fm.pcs)||fm.pcs<1||fm.pcs>30)return err.textContent="La cantidad de computadores debe estar entre 1 y 30.";
+  if(!curso||!asig)return err.textContent="Completa curso y asignatura.";
+  if(!enRangoDisponibilidad(fm.f)){err.textContent=availabilityError||"Confirma la disponibilidad antes de enviar.";const request=ensureAvailability(fm.f);request.then(()=>{if(!$("#ov").classList.contains("hidden"))sheetRes()});return}
+  if(ocupado(fm.f,fm.b)||bloquePasado(fm.f,fm.b-1))return err.textContent="Ese bloque ya no está disponible.";
+  if(fm.f<MIN&&!fm.esp)return err.textContent=`La fecha debe cumplir ${PLAZO} días hábiles de anticipación (desde el ${fLarga(MIN)}) o solicitar una excepción.`;
+  const just=(fm.just||"").trim();
+  if(fm.esp&&just.length<15)return err.textContent="Explica el motivo de la solicitud especial (mínimo 15 caracteres).";
+  const inc=[];if(fm.falla){const f=leerFalla("rf");if(!Number.isInteger(f.equipo_numero)||f.equipo_numero<1||f.equipo_numero>40||!f.detalle)return err.textContent="Completa el número de equipo (1–40) y el detalle de la falla, o desmarca la falla.";inc.push(f)}
+  const esp=!!fm.esp;
+  const p={fecha:fm.f,bloque:fm.b,pcs:fm.pcs,curso,asignatura:asig,casoEspecial:esp,justificacion:esp?just:"",observacion:(fm.obs||"").trim(),incidencias:inc};
+  const data=await enviarSolicitud("RESERVA",p,t,err,esp?"Enviar solicitud especial":"Solicitar reserva");
+  if(!data)return;
+  const reserva={id:++DB.id,backendId:data.id,f:fm.f,b:fm.b,doc:USER.nombre,e:ME,curso,asig,pcs:fm.pcs,est:"pendiente",cierre:false,esp,just:esp?just:""};
+  RS().push(reserva);const guardadaLocalmente=guardar();occupiedRemote.add(`${fm.f}:${fm.b}`);lastRequestId=data.id;
+  const especial=esp;
+  st.dia=fm.f;st.sem=semDe(fm.f);fm={};render();
+  confirma(especial?"Solicitud especial enviada":"Solicitud enviada",`Solicitud enviada correctamente.${data.plazo?` Plazo: ${esc(data.plazo)}.`:""}${guardadaLocalmente?"":" El servidor la recibió, pero no se pudo guardar en este teléfono. Anota el ID de solicitud."}`,lastRequestId);
+ }
+ else if("envc" in d){
+  guardaCampos();const err=$("#err");
+  if(fm.ord===null)return err.textContent="Indica cómo quedó la sala.";
+  const r=fm.r,estadoAnterior=r.est,cierreAnterior=r.cierre,datosAnteriores=r.cierreDatos;
+  r.cierre=true;r.est="completada";r.cierreDatos={ordenada:fm.ord,observacion:(fm.obs||"").trim()};
+  if(!guardar()){r.est=estadoAnterior;r.cierre=cierreAnterior;r.cierreDatos=datosAnteriores;return err.textContent="No se pudo guardar el cierre en este teléfono. Libera espacio y vuelve a intentarlo."}
+  fm={};render();confirma("Cierre guardado","Se guardó en este teléfono; no se envió al Encargado.");
+ }
+});
+document.addEventListener("change",e=>{
+ if(e.target.id==="chF"){guardaCampos();fm.falla=e.target.checked;fm.tipo=null;fm.r?sheetCierre():sheetRes()}
+ else if(e.target.id==="chE"){guardaCampos();fm.esp=e.target.checked;sheetRes()}
+});
+
+/* ═════════ Instalación PWA ═════════ */
+let dip=null,instOculto=false;
+try{instOculto=sessionStorage.getItem("se_inst_x")==="1"}catch(e){}
+const standalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();dip=e});
+addEventListener("appinstalled",()=>{dip=null;render();toast("App instalada ✅")});
+function instBtn(x){return standalone()?"":`<div class="flex items-stretch gap-2"><button id="inst" class="flex-1 rounded-2xl bg-emerald-500 px-4 py-4 text-base font-bold text-white shadow-lg ring-2 ring-white/40">📱 Descargar / Instalar App</button>${x?`<button id="instX" aria-label="Ocultar" class="px-2 text-2xl text-slate-400">×</button>`:""}</div>`}
+function instBanner(){return instOculto||standalone()?"":`<div class="mb-3">${instBtn(true)}</div>`}
+function guiaInstalar(){
+ const pasos=isIOS?["Abre este enlace en <b>Safari</b>.","Toca <b>Compartir</b> ⬆️ (barra de abajo; en iPad, arriba).","Baja y toca <b>Añadir a pantalla de inicio</b>.","Toca <b>Añadir</b>. Listo."]
+ :["Abre este enlace en <b>Chrome</b>.","Toca el menú <b>⋮</b> (arriba a la derecha).","Elige <b>Instalar aplicación</b> (o <b>Añadir a pantalla de inicio</b>).","Toca <b>Instalar</b>. Listo."];
+ $("#sh").innerHTML=`${grip}
+ <div class="mb-3 flex items-center justify-between"><h2 class="text-lg font-semibold">${isIOS?"Instalar en iPhone":"Instalar en Android"}</h2><button data-x aria-label="Cerrar" class="text-2xl leading-none text-slate-500">×</button></div>
+ <ol class="mb-4 list-decimal space-y-2 pl-5 text-base">${pasos.map(p=>`<li>${p}</li>`).join("")}</ol>
+ <p class="mb-3 text-xs text-slate-500">${isIOS?"En iPhone el sistema no permite instalar con un solo botón: hay que hacerlo desde Compartir.":"Si no aparece la opción, abre el enlace https en Chrome (no dentro de WhatsApp u otra app)."}</p>
+ <button data-x class="w-full rounded-2xl bg-indigo-600 py-3.5 text-base font-semibold text-white">Entendido</button>`;
+ abrirSheet();
+}
+document.addEventListener("click",async e=>{
+ const t=e.target.closest("button");if(!t)return;
+ if(t.id==="inst"){if(dip){const d=dip;dip=null;d.prompt();const r=await d.userChoice;if(r.outcome==="accepted")toast("Instalando…")}else guiaInstalar()}
+ else if(t.id==="instX"){instOculto=true;try{sessionStorage.setItem("se_inst_x","1")}catch(x){}render()}
+});
+/* Service Worker opcional: si subes un sw.js junto a este archivo se activa el modo sin internet; si no, la app se instala igual. */
+if("serviceWorker"in navigator&&location.protocol.indexOf("http")===0)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+
+const bootScreen=$("#boot-screen");
+document.body.classList.add("booting");
+function finishBoot(){
+ if(!bootScreen||bootScreen.dataset.done)return;
+ bootScreen.dataset.done="1";
+ $("#app").removeAttribute("aria-hidden");
+ document.body.classList.remove("booting");
+ bootScreen.classList.add("boot-out");
+ setTimeout(()=>bootScreen.remove(),500);
+}
+$("#boot-skip").addEventListener("click",finishBoot);
+setTimeout(finishBoot,matchMedia("(prefers-reduced-motion: reduce)").matches?150:3100);
+
+render();
+if(st.logged){const request=cargarDisponibilidad(HOY);render();request.then(()=>{if(st.logged)render()})}
+</script>
+</body>
+</html>
