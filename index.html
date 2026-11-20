@@ -81,16 +81,14 @@ body.booting{overflow:hidden}
 /* ═════════ CONFIGURACIÓN ═════════ */
 const PLAZO = 3;                       // Días hábiles de anticipación según el reglamento
 const API_URL = "https://script.google.com/macros/s/AKfycbzsmRArA48oOvmxDR7K6EugjjDYrZpDdhSksaohC2VSHf-K6Ih9vfMIy4FZuQ3cnjkCcA/exec";
-const GOOGLE_CLIENT_ID = "50551609665-id34vtqsggkstra976c93jiu71829bqd.apps.googleusercontent.com";
-const GOOGLE_DOMAIN = "escuelasantafilomena.cl";
-const GOOGLE_TEST_EMAIL = "santinoo.practica@gmail.com";
+const INSTITUTIONAL_DOMAIN = "escuelasantafilomena.cl";
 const ADMIN_EMAIL = "enlaces@escuelasantafilomena.cl";
 const FERIADOS = ["2026-12-08","2026-12-25","2027-01-01"]; // Agrega aquí los feriados (AAAA-MM-DD); no cuentan como días hábiles
 
 /* ═════════ UTILIDADES ═════════ */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const MENSAJES_API={autenticacion_requerida:"Inicia sesión con una cuenta Google autorizada para continuar.",sin_token:"La sesión de Google venció; vuelve a iniciar sesión.",token_invalido:"La sesión de Google venció; vuelve a iniciar sesión.",dominio_no_permitido:"Usa una cuenta Google incluida en la lista autorizada.",solo_administrador:"Solo la cuenta encargada puede realizar esta acción.",estado_no_pendiente:"Esta solicitud ya fue revisada. Actualiza la lista.",motivo_requerido:"Escribe un motivo breve para rechazar la reserva.",bloque_ocupado:"Ese horario acaba de ser reservado. Elige otro."};
+const MENSAJES_API={correo_institucional_requerido:"Usa un correo terminado en @escuelasantafilomena.cl.",nombre_requerido:"Escribe tu nombre y apellido.",codigo_espera:"Espera un minuto antes de pedir otro código.",limite_codigos:"Se alcanzó el límite de códigos. Inténtalo más tarde.",codigo_vencido:"El código venció. Solicita uno nuevo.",codigo_incorrecto:"El código no coincide. Revísalo e inténtalo otra vez.",codigo_bloqueado:"Se agotaron los intentos. Espera un minuto y solicita otro código.",no_se_pudo_enviar_codigo:"No se pudo enviar el correo. Inténtalo más tarde o pide ayuda al Encargado.",sesion_requerida:"Inicia sesión con un código enviado a tu correo institucional.",sesion_vencida:"Tu sesión venció. Inicia sesión nuevamente.",solo_administrador:"Solo la cuenta encargada puede realizar esta acción.",estado_no_pendiente:"Esta solicitud ya fue revisada. Actualiza la lista.",motivo_requerido:"Escribe un motivo breve para rechazar la reserva.",bloque_ocupado:"Ese horario acaba de ser reservado. Elige otro."};
 const mensajeApi=error=>MENSAJES_API[error]||error;
 const BL=[["08:00","08:45"],["08:45","09:30"],["09:45","10:30"],["10:30","11:15"],["11:30","12:15"],["12:15","13:00"],["14:00","14:45"],["14:45","15:30"]];
 const DN=["Lun","Mar","Mié","Jue","Vie"];
@@ -236,11 +234,11 @@ const ocupado=(f,b)=>{
  return enRangoDisponibilidad(f)&&occupiedRemote.has(`${f}:${b}`)?{f,b,remote:true,est:"pendiente"}:null;
 };
 async function postJson(payload){
- if(USER&&USER.expiresAt&&USER.expiresAt<Date.now()+30000)throw new Error("La sesión de Google expiró. Cierra sesión e inicia nuevamente.");
+ if(USER&&USER.expiresAt&&USER.expiresAt<Date.now()+30000)throw new Error("Tu sesión venció. Inicia sesión nuevamente con un código.");
  const controller=window.AbortController?new AbortController():null;
  const timer=controller?setTimeout(()=>controller.abort(),30000):null;
  try{
-  const body=USER&&USER.idToken?{...payload,idToken:USER.idToken}:payload;
+  const body=USER&&USER.sessionToken?{...payload,sessionToken:USER.sessionToken}:payload;
   const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),...(controller?{signal:controller.signal}:{})});
   const text=await response.text();
   let data;
@@ -322,54 +320,39 @@ let USER=null,ME="";
 let st={logged:false,tab:"agenda",sem:0,dia:HOY};
 if(!esHabil(HOY)){let d=HOY;while(!esHabil(d))d=add(d,1);st.dia=d;st.sem=semDe(d)}
 let fm={};
-let googleIdInitialized=false;
-function manejarCredencialGoogle(response){
- const aviso=$("#lerr");
+let loginStep="email",loginEmail="",loginNombre="",loginCode="",loginBusy=false,loginError="",loginNotice="";
+async function solicitarCodigoLogin(reenviar){
+ const email=(reenviar?loginEmail:$("#loginEmail")?.value||"").trim().toLowerCase();
+ const nombre=(reenviar?loginNombre:$("#loginNombre")?.value||"").trim().replace(/\s+/g," ");
+ loginEmail=email;loginNombre=nombre;
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.slice(email.lastIndexOf("@")+1)!==INSTITUTIONAL_DOMAIN){
+  loginError="Escribe un correo terminado en @escuelasantafilomena.cl.";loginNotice="";render();return;
+ }
+ if(nombre.length<2){loginError="Escribe tu nombre y apellido.";loginNotice="";render();return}
+ loginBusy=true;loginError="";loginNotice="";render();
  try{
-  if(!response||!response.credential)throw new Error("Google no entregó una credencial válida.");
-  const partes=response.credential.split(".");
-  if(partes.length!==3)throw new Error("No se pudo validar la respuesta de Google.");
-  const base64=partes[1].replace(/-/g,"+").replace(/_/g,"/");
-  const bytes=Uint8Array.from(atob(base64.padEnd(Math.ceil(base64.length/4)*4,"=")),c=>c.charCodeAt(0));
-  const perfil=JSON.parse(new TextDecoder().decode(bytes));
-  const email=String(perfil.email||"").toLowerCase();
-  const esCuentaInstitucional=perfil.hd===GOOGLE_DOMAIN&&email.endsWith("@"+GOOGLE_DOMAIN);
-  if((!esCuentaInstitucional&&email!==GOOGLE_TEST_EMAIL)||perfil.email_verified!==true)
-   throw new Error("Usa una cuenta Google incluida en la lista autorizada.");
-  const expiresAt=Number(perfil.exp)*1000;
-  if(!Number.isFinite(expiresAt)||expiresAt<=Date.now())throw new Error("La sesión de Google ya venció. Inténtalo otra vez.");
-  USER={email,nombre:nombreNormalizado(perfil.name||email),idToken:response.credential,expiresAt};
-  ME=email;st.logged=true;st.tab="agenda";fm={};
+  await postJson({action:"solicitarCodigo",email});
+  loginStep="codigo";loginCode="";loginNotice=`Si el correo es válido, enviamos un código a ${email}. Revisa también Spam.`;
+ }catch(error){loginError=error.message||"No se pudo solicitar el código."}
+ finally{loginBusy=false;render();if(loginStep==="codigo")$("#loginCode")?.focus()}
+}
+async function verificarCodigoLogin(){
+ loginCode=($("#loginCode")?.value||"").trim().toUpperCase();
+ if(!/^[A-F0-9]{8}$/.test(loginCode)){loginError="Escribe los 8 caracteres del código recibido.";loginNotice="";render();return}
+ loginBusy=true;loginError="";loginNotice="";render();
+ try{
+  const data=await postJson({action:"verificarCodigo",email:loginEmail,nombre:loginNombre,codigo:loginCode});
+  if(!data.sessionToken||!/^[A-F0-9]{64}$/i.test(data.sessionToken)||!Number.isFinite(Number(data.expiresAt)))
+   throw new Error("El servidor no entregó una sesión válida. Solicita un nuevo código.");
+  USER={email:data.email,nombre:nombreNormalizado(data.nombre),sessionToken:data.sessionToken,expiresAt:Number(data.expiresAt)};
+  ME=USER.email;st.logged=true;st.tab="agenda";fm={};
+  loginStep="email";loginCode="";loginError="";loginNotice="";
   render();
   const tareas=[cargarDisponibilidad(HOY),cargarMisReservas()];
   if(esAdmin())tareas.push(cargarReservasAdmin());
   Promise.all(tareas).then(()=>{if(st.logged)render()});
- }catch(error){if(aviso)aviso.textContent=error.message||"No se pudo iniciar sesión con Google."}
-}
-function prepararGoogleLogin(){
- const aviso=$("#lerr");
- if(!$("#googleSignIn"))return;
- if(!GOOGLE_CLIENT_ID||GOOGLE_CLIENT_ID.indexOf("PEGA_AQUI")===0){
-  aviso.textContent="Falta configurar el cliente de inicio de sesión Google para publicar esta versión.";
-  return;
- }
- const listo=()=>{
-  const botonActual=$("#googleSignIn"),avisoActual=$("#lerr");
-  if(!botonActual)return;
-  if(!window.google||!google.accounts||!google.accounts.id){if(avisoActual)avisoActual.textContent="No se pudo cargar el inicio de sesión Google. Revisa tu conexión e inténtalo otra vez.";return}
-  if(!googleIdInitialized){google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:manejarCredencialGoogle,auto_select:false});googleIdInitialized=true}
-  google.accounts.id.renderButton(botonActual,{theme:"filled_blue",size:"large",shape:"pill",text:"signin_with",width:Math.min(320,botonActual.clientWidth||280)});
- };
- if(window.google&&google.accounts&&google.accounts.id){listo();return}
- let script=$("#google-identity");
- if(script){
-  if(script.dataset.failed==="true")aviso.textContent="No se pudo cargar el inicio de sesión Google. Revisa tu conexión.";
-  else if(!script.dataset.waiting){script.dataset.waiting="true";script.addEventListener("load",listo,{once:true})}
-  return;
- }
- script=document.createElement("script");script.id="google-identity";script.src="https://accounts.google.com/gsi/client";script.async=true;
- script.onload=listo;script.onerror=()=>{script.dataset.failed="true";const actual=$("#lerr");if(actual)actual.textContent="No se pudo cargar el inicio de sesión Google. Revisa tu conexión.";};
- document.head.appendChild(script);
+ }catch(error){loginError=error.message||"No se pudo verificar el código."}
+ finally{loginBusy=false;if(!st.logged)render()}
 }
 
 /* ═════════ ESTILOS ═════════ */
@@ -385,21 +368,28 @@ const semDias=(s=st.sem)=>DN.map((n,i)=>{const f=add(lunes0,s*7+i);return{n,f,nu
 function avisoPlazo(){return`<div role="alert" class="rounded-2xl border-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500 dark:bg-amber-900/30 dark:text-amber-100">⚠️ <b>Reserva oficial:</b> El reglamento exige solicitar la sala por correo institucional con al menos <b>${PLAZO} días hábiles</b> de anticipación. Esta app no reemplaza el correo; la reserva queda confirmada cuando responda el Encargado de Enlaces.<div class="mt-1 text-xs opacity-80">Primera fecha disponible por vía regular en esta agenda: <b class="capitalize">${fLarga(MIN)}</b>.</div><a href="mailto:enlaces@escuelasantafilomena.cl?subject=Solicitud%20de%20uso%20de%20Sala%20de%20Computaci%C3%B3n" class="mt-2 inline-flex min-h-11 max-w-full break-all items-center rounded-xl bg-amber-100 px-3 font-semibold underline decoration-amber-700 underline-offset-2 dark:bg-amber-900/60 dark:text-amber-50">✉️ enlaces@escuelasantafilomena.cl</a></div>`}
 
 /* ═════════ LOGIN ═════════ */
-function vLogin(msg){
+function vLogin(){
  $("#app").innerHTML=`<div class="flex min-h-screen flex-col justify-between bg-gradient-to-b from-indigo-700 to-indigo-900 px-6 py-10 text-white">
  <div class="pt-2"><div class="mb-6 flex justify-end">${controlesTexto(true)}</div><div class="text-center"><div class="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-3xl bg-white p-2 shadow-lg"><img src="images/logo-escuela.png" alt="Escuela Santa Filomena" class="h-full w-full object-contain"></div>
  <h1 class="text-2xl font-bold">Sala de Enlaces</h1><p class="mt-1 text-indigo-200">Escuela Santa Filomena</p>
  <p class="mt-6 text-base text-indigo-100">Reserva la sala y reporta fallas de equipos en segundos.</p></div></div>
  <div class="space-y-3">${instBtn(false)}
   <div class="rounded-2xl bg-white p-4 text-center text-slate-800 shadow-lg">
-   <h2 class="mb-1 text-lg font-semibold">Inicia sesión con tu cuenta institucional</h2>
-   <p class="mb-4 text-sm text-slate-600">Solo se aceptan cuentas Google autorizadas. Inicia sesión con la contraseña propia de esa cuenta; la app nunca la solicita ni la guarda. Tu correo permitirá asociar tus reservas y avisarte si se aceptan o rechazan.</p>
-   <div id="googleSignIn" class="flex min-h-11 justify-center"></div>
-   <div id="lerr" role="alert" class="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">${msg||""}</div>
+   <h2 class="mb-1 text-lg font-semibold">Accede con tu correo institucional</h2>
+   <p class="mb-4 text-sm text-slate-600">Te enviaremos un código de un solo uso para confirmar que tienes acceso al correo. No necesitas iniciar sesión con Google.</p>
+   ${loginStep==="email"?`<label class="mb-3 block text-left text-sm font-medium" for="loginNombre">Nombre y apellido<input id="loginNombre" autocomplete="name" maxlength="80" value="${esc(loginNombre)}" class="${inp} mt-1 text-slate-800" placeholder="Tu nombre"></label>
+   <label class="mb-3 block text-left text-sm font-medium" for="loginEmail">Correo institucional<input id="loginEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" value="${esc(loginEmail)}" class="${inp} mt-1 text-slate-800" placeholder="nombre@escuelasantafilomena.cl"></label>
+   <button id="sendLoginCode" type="button" ${loginBusy?"disabled":""} class="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-60">${loginBusy?"Enviando código…":"Enviar código"}</button>`
+   :`<p class="mb-3 text-sm text-slate-600">Escribe el código de 8 caracteres enviado a <b>${esc(loginEmail)}</b>.</p>
+   <label class="mb-3 block text-left text-sm font-medium" for="loginCode">Código de acceso<input id="loginCode" type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="8" value="${esc(loginCode)}" class="${inp} mt-1 text-center font-mono uppercase tracking-[0.3em] text-slate-800" placeholder="AB12CD34"></label>
+   <button id="verifyLoginCode" type="button" ${loginBusy?"disabled":""} class="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-60">${loginBusy?"Verificando…":"Verificar código"}</button>
+   <div class="mt-2 grid grid-cols-2 gap-2"><button id="resendLoginCode" type="button" ${loginBusy?"disabled":""} class="rounded-xl border border-slate-300 py-2 text-sm font-medium disabled:opacity-60">Enviar otro</button><button id="changeLoginEmail" type="button" ${loginBusy?"disabled":""} class="rounded-xl border border-slate-300 py-2 text-sm font-medium disabled:opacity-60">Cambiar correo</button></div>`}
+   <div id="lerr" role="alert" class="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">${esc(loginError)}</div>
+   <div role="status" class="mt-2 text-sm text-emerald-800">${esc(loginNotice)}</div>
+   <p class="mt-3 text-xs text-slate-500">El código vence en 5 minutos. Puedes pedir hasta 5 códigos por hora.</p>
   </div>
   <p class="text-center text-sm text-indigo-200">Si necesitas ayuda, pide apoyo al Encargado de Enlaces.</p>
  </div></div>`;
- prepararGoogleLogin();
 }
 
 /* ═════════ SHELL ═════════ */
@@ -599,7 +589,11 @@ document.addEventListener("click",async e=>{
  if(e.target.id==="ov")return cerrar();
  const t=e.target.closest("button");if(!t)return;const d=t.dataset,id=t.id;
  if("font" in d){ajustarTexto(+d.font);return}
- if(id==="out"){if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();st.logged=false;USER=null;ME="";fm={};cerrar();render()}
+ if(id==="out"){st.logged=false;USER=null;ME="";fm={};loginStep="email";loginEmail="";loginNombre="";loginCode="";loginError="";loginNotice="";cerrar();render()}
+ else if(id==="sendLoginCode")await solicitarCodigoLogin(false)
+ else if(id==="resendLoginCode")await solicitarCodigoLogin(true)
+ else if(id==="verifyLoginCode")await verificarCodigoLogin()
+ else if(id==="changeLoginEmail"){loginStep="email";loginCode="";loginError="";loginNotice="";render()}
  else if(id==="retryAvailability"){const f=fm.f||st.dia,request=cargarDisponibilidad(f);if($("#ov").classList.contains("hidden"))render();else sheetRes();await request;if($("#ov").classList.contains("hidden"))render();else sheetRes()}
  else if(d.t){
   if(d.t==="admin"&&!esAdmin())return;
