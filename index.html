@@ -81,14 +81,92 @@ body.booting{overflow:hidden}
 /* ═════════ CONFIGURACIÓN ═════════ */
 const PLAZO = 3;                       // Días hábiles de anticipación según el reglamento
 const API_URL = "https://script.google.com/macros/s/AKfycbzsmRArA48oOvmxDR7K6EugjjDYrZpDdhSksaohC2VSHf-K6Ih9vfMIy4FZuQ3cnjkCcA/exec";
+const GOOGLE_CLIENT_ID = "50551609665-id34vtqsggkstra976c93jiu71829bqd.apps.googleusercontent.com";
+const GOOGLE_DOMAIN = "escuelasantafilomena.cl";
+const GOOGLE_TEST_EMAIL = "santinoo.practica@gmail.com";
+const ADMIN_EMAIL = "enlaces@escuelasantafilomena.cl";
 const FERIADOS = ["2026-12-08","2026-12-25","2027-01-01"]; // Agrega aquí los feriados (AAAA-MM-DD); no cuentan como días hábiles
 
 /* ═════════ UTILIDADES ═════════ */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const MENSAJES_API={autenticacion_requerida:"Inicia sesión con una cuenta Google autorizada para continuar.",sin_token:"La sesión de Google venció; vuelve a iniciar sesión.",token_invalido:"La sesión de Google venció; vuelve a iniciar sesión.",dominio_no_permitido:"Usa una cuenta Google incluida en la lista autorizada.",solo_administrador:"Solo la cuenta encargada puede realizar esta acción.",estado_no_pendiente:"Esta solicitud ya fue revisada. Actualiza la lista.",motivo_requerido:"Escribe un motivo breve para rechazar la reserva.",bloque_ocupado:"Ese horario acaba de ser reservado. Elige otro."};
+const mensajeApi=error=>MENSAJES_API[error]||error;
 const BL=[["08:00","08:45"],["08:45","09:30"],["09:45","10:30"],["10:30","11:15"],["11:30","12:15"],["12:15","13:00"],["14:00","14:45"],["14:45","15:30"]];
 const DN=["Lun","Mar","Mié","Jue","Vie"];
 const TIPOS=["No enciende","Mouse","Teclado","Pantalla","Red","Otro"];
+const HORARIO_NOVIEMBRE=[
+ {desde:"2026-11-02",hasta:"2026-11-06",titulo:"2–6 de noviembre",dias:["Lunes · 02/11","Martes · 03/11","Miércoles · 04/11","Jueves · 05/11","Viernes · 06/11"],filas:[
+  {hora:"08:00–08:45",celdas:["5°A DIA socioemocional","Carolina 7A","Carolina 7B","Carolina 8A","Carolina 8B"]},
+  {hora:"08:45–09:30",celdas:["5°A DIA socioemocional","Carolina 7A","Carolina 7B","Carolina 8A","Carolina 8B"]},
+  {hora:"09:30–09:50",comun:"RECREO (1° Y 2° Ciclo)"},
+  {hora:"09:50–10:35",celdas:["6°A DIA matemáticas","5°A DIA lectura","Carolina 8B","Carolina 7A","Carolina 7B"]},
+  {hora:"10:35–11:20",celdas:["6°A DIA matemáticas","5°A DIA lectura","Carolina 8B","Carolina 7A","Carolina 7B"]},
+  {hora:"11:20–11:40",comun:"RECREO 1° Ciclo (11:20 a 11:30) · 2° Ciclo (11:20 a 11:40)"},
+  {hora:"11:40–12:25",celdas:["5°B DIA socioemocional","Ximena 1B (11:40 a 12:15)","7°A DIA matemáticas","","Carolina 8A"]},
+  {hora:"12:25–13:10",celdas:["5°B DIA socioemocional","Ximena 1B (13:00 a 13:45)","7°A DIA matemáticas","","Carolina 8A"]},
+  {hora:"12:15–13:00",comun:"Almuerzo 1° Ciclo"},
+  {hora:"13:10–13:55",comun:"Almuerzo 2° Ciclo"},
+  {hora:"13:55–14:40",celdas:["8°A DIA socioemocional","Carolina 7B","","Franco 8B",""]},
+  {hora:"14:40–15:25",celdas:["8°A DIA socioemocional","Carolina 7B","","Franco 8B",""]}
+ ]},
+ {desde:"2026-11-09",hasta:"2026-11-13",titulo:"9–13 de noviembre",dias:["Lunes · 09/11","Martes · 10/11","Miércoles · 11/11","Jueves · 12/11","Viernes · 13/11"],filas:[
+  {hora:"08:00–08:45",celdas:["6°A DIA lectura","5°A DIA Historia","5°A DIA matemáticas","7°B DIA matemáticas","8°B DIA lectura"]},
+  {hora:"08:45–09:30",celdas:["6°A DIA lectura","5°A DIA Historia","5°A DIA matemáticas","7°B DIA matemáticas","8°B DIA lectura"]},
+  {hora:"09:30–09:50",comun:"RECREO (1° Y 2° Ciclo)"},
+  {hora:"09:50–10:35",celdas:["8°A DIA lectura","8°B DIA matemáticas","","8°A DIA matemáticas","7°B DIA lectura"]},
+  {hora:"10:35–11:20",celdas:["8°A DIA lectura","8°B DIA matemáticas","","8°A DIA matemáticas","7°B DIA lectura"]},
+  {hora:"11:20–11:40",comun:"RECREO 1° Ciclo (11:20 a 11:30) · 2° Ciclo (11:20 a 11:40)"},
+  {hora:"11:40–12:25",celdas:["7°A DIA lectura","6°B DIA lectura","6°B DIA matemáticas","7°B DIA socioemocional","5°B DIA Ciencias Nat"]},
+  {hora:"12:25–13:10",celdas:["7°A DIA lectura","6°B DIA lectura","6°B DIA matemáticas","7°B DIA socioemocional","5°B DIA Ciencias Nat"]},
+  {hora:"12:15–13:00",comun:"Almuerzo 1° Ciclo"},
+  {hora:"13:10–13:55",comun:"Almuerzo 2° Ciclo"},
+  {hora:"13:55–14:40",celdas:["5°B DIA Historia","5°B DIA matemáticas","5°B DIA lectura","8°B DIA socioemocional",""]},
+  {hora:"14:40–15:25",celdas:["5°B DIA Historia","5°B DIA matemáticas","5°B DIA lectura","8°B DIA socioemocional",""]}
+ ]},
+ {desde:"2026-11-16",hasta:"2026-11-20",titulo:"16–20 de noviembre",dias:["Lunes · 16/11","Martes · 17/11","Miércoles · 18/11","Jueves · 19/11","Viernes · 20/11"],filas:[
+  {hora:"08:00–08:45",celdas:["4°A DIA lectura","3°A DIA lectura","4°A DIA matemáticas","3°B DIA lectura","7°B DIA Ciencias Nat"]},
+  {hora:"08:45–09:30",celdas:["4°A DIA lectura","3°A DIA lectura","4°A DIA matemáticas","3°B DIA lectura","7°B DIA Ciencias Nat"]},
+  {hora:"09:30–09:50",comun:"RECREO (1° Y 2° Ciclo)"},
+  {hora:"09:50–10:35",celdas:["4°B DIA lectura","8°A DIA Ciencias Nat","3°A DIA matemáticas","4°B DIA matemáticas","3°B DIA matemáticas"]},
+  {hora:"10:35–11:20",celdas:["4°B DIA lectura","8°A DIA Ciencias Nat","3°A DIA matemáticas","4°B DIA matemáticas","3°B DIA matemáticas"]},
+  {hora:"11:20–11:40",comun:"RECREO 1° Ciclo (11:20 a 11:30) · 2° Ciclo (11:20 a 11:40)"},
+  {hora:"11:40–12:25",celdas:["7°B DIA Historia","Ximena 1B (11:30 a 12:15)","6°A DIA Ciencias Nat","4°A DIA socioemocional (11:30 a 12:15)","7°A DIA Historia"]},
+  {hora:"12:25–13:10",celdas:["7°B DIA Historia","","6°A DIA Ciencias Nat","","7°A DIA Historia"]},
+  {hora:"12:15–13:00",comun:"Almuerzo 1° Ciclo"},
+  {hora:"13:10–13:55",comun:"Almuerzo 2° Ciclo"},
+  {hora:"13:55–14:40",celdas:["5°A DIA LECTURA","6°B DIA socioemocional","4°B dia socioemocional","",""]},
+  {hora:"14:40–15:25",celdas:["5°A DIA LECTURA","6°B DIA socioemocional","4°B dia socioemocional","",""]}
+ ]},
+ {desde:"2026-11-23",hasta:"2026-11-27",titulo:"23–27 de noviembre",dias:["Lunes · 23/11","Martes · 24/11","Miércoles · 25/11","Jueves · 26/11","Viernes · 27/11"],filas:[
+  {hora:"08:00–08:45",celdas:["2°A DIA lectura","2°A DIA matemáticas","2°B DIA matemáticas","2°B DIA lectura","1°A DIA lectura"]},
+  {hora:"08:45–09:30",celdas:["2°A DIA lectura","2°A DIA matemáticas","2°B DIA matemáticas","2°B DIA lectura","1°A DIA lectura"]},
+  {hora:"09:30–09:50",comun:"RECREO (1° Y 2° Ciclo)"},
+  {hora:"09:50–10:35",celdas:["1°B DIA lectura","1°A DIA matemáticas","6°B DIA Historia","1°B DIA matemáticas","8°B DIA Historia"]},
+  {hora:"10:35–11:20",celdas:["1°B DIA lectura","1°A DIA matemáticas","6°B DIA Historia","1°B DIA matemáticas","8°B DIA Historia"]},
+  {hora:"11:20–11:40",comun:"RECREO 1° Ciclo (11:20 a 11:30) · 2° Ciclo (11:20 a 11:40)"},
+  {hora:"11:40–12:25",celdas:["","8°A DIA Historia","Darinka","7°A DIA Ciencias Nat.","7A Alexis"]},
+  {hora:"12:25–13:10",celdas:["","8°A DIA Historia","Darinka","7°A DIA Ciencias Nat.","7A Alexis"]},
+  {hora:"12:15–13:00",comun:"Almuerzo 1° Ciclo"},
+  {hora:"13:10–13:55",comun:"Almuerzo 2° Ciclo"},
+  {hora:"13:55–14:40",celdas:["Ximena 1B","6°A DIA socioemocional","6°A DIA Historia","7°A DIA socioemocional",""]},
+  {hora:"14:40–15:25",celdas:["Ximena 1B","6°A DIA socioemocional","6°A DIA Historia","7°A DIA socioemocional",""]}
+ ]},
+ {desde:"2026-11-30",hasta:"2026-11-30",titulo:"30 de noviembre",dias:["Lunes · 30/11"],filas:[
+  {hora:"08:00–08:45",celdas:["6°B DIA Ciencias Nat"]},
+  {hora:"08:45–09:30",celdas:["6°B DIA Ciencias Nat"]},
+  {hora:"09:30–09:50",comun:"RECREO (1° Y 2° Ciclo)"},
+  {hora:"09:50–10:35",celdas:["8°B DIA Ciencias Nat"]},
+  {hora:"10:35–11:20",celdas:["8°B DIA Ciencias Nat"]},
+  {hora:"11:20–11:40",comun:"RECREO 1° Ciclo (11:20 a 11:30) · 2° Ciclo (11:20 a 11:40)"},
+  {hora:"11:40–12:25",celdas:["5°A DIA Ciencias Nat"]},
+  {hora:"12:25–13:10",celdas:["5°A DIA Ciencias Nat"]},
+  {hora:"12:15–13:00",comun:"Almuerzo 1° Ciclo"},
+  {hora:"13:10–13:55",comun:"Almuerzo 2° Ciclo"},
+  {hora:"13:55–14:40",celdas:[""]},
+  {hora:"14:40–15:25",celdas:[""]}
+ ]}
+];
 const iso=d=>d.toISOString().slice(0,10);
 const add=(f,n)=>{const d=new Date(f+"T12:00:00");d.setDate(d.getDate()+n);return iso(d)};
 const hoyD=new Date();hoyD.setHours(12,0,0,0);const HOY=iso(hoyD);
@@ -110,6 +188,47 @@ const RS=()=>DB.reservas;
 const guardar=()=>{try{localStorage.setItem("se_db_v2",JSON.stringify(DB));return true}catch(e){return false}};
 let occupiedRemote=new Set(),availabilityRange=null,availabilityLoading=false,availabilityError="",availabilityRequest=null;
 let pendingRequests={},lastRequestId=null;
+let mineLoading=false,mineError="",adminReservations=[],adminLoading=false,adminError="";
+const ESTADO_SERVIDOR={PENDIENTE:"pendiente",APROBADA:"confirmada",RECHAZADA:"rechazada",CANCELADA:"cancelada"};
+const estadoLocal=estado=>{const valor=ESTADO_SERVIDOR[String(estado||"").toUpperCase()];if(!valor)throw new Error("El servidor devolvió un estado de reserva no reconocido.");return valor};
+async function cargarMisReservas(){
+ if(!USER)return false;
+ mineLoading=true;mineError="";
+ try{
+  const data=await postJson({action:"listar",desde:HOY});
+  if(!Array.isArray(data.reservas))throw new Error("El servidor no devolvió una lista de reservas válida.");
+  const anteriores=new Map(RS().filter(r=>r.e===ME&&r.backendId).map(r=>[String(r.backendId),r]));
+  DB.reservas=data.reservas.map(r=>{
+   const anterior=anteriores.get(String(r.id))||{};
+   return{...anterior,id:anterior.id||++DB.id,backendId:String(r.id),f:r.f,b:Number(r.b),doc:r.nombre||USER.nombre,e:ME,
+    curso:r.curso||"",asig:r.asig||"",pcs:Number(r.pcs)||0,est:estadoLocal(r.est),cierre:!!r.cierre,esp:!!r.esp,just:r.just||"",respuesta:r.respuesta||""};
+  });
+  if(!guardar())throw new Error("No se pudieron guardar las reservas sincronizadas en este teléfono.");
+  return true;
+ }catch(e){mineError=e.message||"No se pudieron actualizar tus reservas.";return false}
+ finally{mineLoading=false}
+}
+async function cargarReservasAdmin(){
+ if(!USER||!esAdmin())return false;
+ adminLoading=true;adminError="";
+ try{
+  const data=await postJson({action:"listarAdmin"});
+  if(!Array.isArray(data.reservas))throw new Error("El servidor no devolvió una lista de solicitudes válida.");
+  adminReservations=data.reservas;return true;
+ }catch(e){adminError=e.message||"No se pudieron cargar las solicitudes.";return false}
+ finally{adminLoading=false}
+}
+const esAdmin=()=>!!USER&&USER.email.toLowerCase()===ADMIN_EMAIL.toLowerCase();
+async function cambiarEstadoReserva(id,estado){
+ const motivo=[...document.querySelectorAll("[data-motivo]")].find(x=>x.dataset.motivo===String(id))?.value.trim()||"";
+ if(estado==="RECHAZADA"&&motivo.length<5){adminError="Escribe un motivo breve para rechazar la reserva.";render();return}
+ try{
+  const data=await postJson({action:"estado",id,estado,motivo});
+  await Promise.all([cargarReservasAdmin(),cargarMisReservas()]);
+  render();
+  toast(data.correoEnviado?"Decisión guardada y correo enviado ✅":data.sinCambios?"La reserva ya tenía ese estado.":"Estado guardado; no se pudo confirmar el envío del correo.");
+ }catch(e){adminError=e.message||"No se pudo actualizar la reserva.";render()}
+}
 const enRangoDisponibilidad=f=>availabilityRange&&Date.now()-availabilityRange.actualizada<180000&&f>=availabilityRange.desde&&f<=availabilityRange.hasta;
 const ocupado=(f,b)=>{
  const local=RS().find(r=>r.f===f&&r.b===b&&r.est!=="cancelada"&&r.backendId);
@@ -117,16 +236,18 @@ const ocupado=(f,b)=>{
  return enRangoDisponibilidad(f)&&occupiedRemote.has(`${f}:${b}`)?{f,b,remote:true,est:"pendiente"}:null;
 };
 async function postJson(payload){
+ if(USER&&USER.expiresAt&&USER.expiresAt<Date.now()+30000)throw new Error("La sesión de Google expiró. Cierra sesión e inicia nuevamente.");
  const controller=window.AbortController?new AbortController():null;
  const timer=controller?setTimeout(()=>controller.abort(),30000):null;
  try{
-  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload),...(controller?{signal:controller.signal}:{})});
+  const body=USER&&USER.idToken?{...payload,idToken:USER.idToken}:payload;
+  const response=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),...(controller?{signal:controller.signal}:{})});
   const text=await response.text();
   let data;
   try{data=JSON.parse(text)}catch(e){throw new Error(`El servidor respondió con un formato no válido (HTTP ${response.status}).`)}
   if(!data||typeof data!=="object")throw new Error("El servidor respondió con datos no válidos.");
-  if(!response.ok)throw new Error(data.error||`Error de conexión con el servidor (HTTP ${response.status}).`);
-  if(data.ok===false)throw new Error(data.error||"El servidor rechazó la solicitud.");
+  if(!response.ok)throw new Error(mensajeApi(data.error||`Error de conexión con el servidor (HTTP ${response.status}).`));
+  if(data.ok===false)throw new Error(mensajeApi(data.error||"El servidor rechazó la solicitud."));
   return data;
  }catch(e){
   if(e.name==="AbortError")throw new Error("La conexión tardó demasiado. No se reenvió la solicitud; puedes reintentar con seguridad.");
@@ -187,7 +308,6 @@ try{const guardado=Number(localStorage.getItem("se_font_size"));if(TAMAÑOS_TEXT
 document.documentElement.style.fontSize=`${textoPx}px`;
 function controlesTexto(oscuro=false){const tono=oscuro?"border-white/60 text-white":"border-indigo-700 text-indigo-800";return`<fieldset class="flex items-center justify-center gap-2"><legend class="sr-only">Tamaño del texto</legend><button type="button" data-font="-1" aria-label="Reducir tamaño del texto" ${textoPx===TAMAÑOS_TEXTO[0]?"disabled":""} class="rounded-xl border ${tono} px-3 py-2 text-base font-semibold disabled:opacity-50">A−</button><span class="min-w-20 text-center text-sm ${oscuro?"":"text-slate-700 dark:text-slate-200"}" aria-live="polite">Texto ${textoPx}px</span><button type="button" data-font="1" aria-label="Aumentar tamaño del texto" ${textoPx===TAMAÑOS_TEXTO[TAMAÑOS_TEXTO.length-1]?"disabled":""} class="rounded-xl border ${tono} px-3 py-2 text-base font-semibold disabled:opacity-50">A+</button></fieldset>`}
 function ajustarTexto(delta){
- const nombre=$("#nombre");if(nombre)fm.nombre=nombre.value;
  if(st.tab==="fallas"&&$("#ffpc0"))guardarIncidenciasReporte();
  const indice=TAMAÑOS_TEXTO.indexOf(textoPx);
  textoPx=TAMAÑOS_TEXTO[Math.max(0,Math.min(TAMAÑOS_TEXTO.length-1,indice+delta))];
@@ -197,22 +317,63 @@ function ajustarTexto(delta){
  render();
  window.scrollTo(0,posicion);
 }
-function validaNombre(raw){
- const nombre=nombreNormalizado(raw);
- if(nombre.length<3)return{ok:false,msg:"Escribe el nombre del profesor (mínimo 3 caracteres)."};
- if(nombre.length>100)return{ok:false,msg:"El nombre no puede superar 100 caracteres."};
- return{ok:true,nombre};
-}
-
 /* ═════════ SESIÓN ═════════ */
 let USER=null,ME="";
 let st={logged:false,tab:"agenda",sem:0,dia:HOY};
 if(!esHabil(HOY)){let d=HOY;while(!esHabil(d))d=add(d,1);st.dia=d;st.sem=semDe(d)}
-try{const u=JSON.parse(localStorage.getItem("se_user_v2")||"null");if(u&&typeof u.nombre==="string"&&validaNombre(u.nombre).ok){USER={nombre:nombreNormalizado(u.nombre)};ME=USER.nombre.toLocaleLowerCase("es-CL");st.logged=true}}catch(e){}
 let fm={};
+let googleIdInitialized=false;
+function manejarCredencialGoogle(response){
+ const aviso=$("#lerr");
+ try{
+  if(!response||!response.credential)throw new Error("Google no entregó una credencial válida.");
+  const partes=response.credential.split(".");
+  if(partes.length!==3)throw new Error("No se pudo validar la respuesta de Google.");
+  const base64=partes[1].replace(/-/g,"+").replace(/_/g,"/");
+  const bytes=Uint8Array.from(atob(base64.padEnd(Math.ceil(base64.length/4)*4,"=")),c=>c.charCodeAt(0));
+  const perfil=JSON.parse(new TextDecoder().decode(bytes));
+  const email=String(perfil.email||"").toLowerCase();
+  const esCuentaInstitucional=perfil.hd===GOOGLE_DOMAIN&&email.endsWith("@"+GOOGLE_DOMAIN);
+  if((!esCuentaInstitucional&&email!==GOOGLE_TEST_EMAIL)||perfil.email_verified!==true)
+   throw new Error("Usa una cuenta Google incluida en la lista autorizada.");
+  const expiresAt=Number(perfil.exp)*1000;
+  if(!Number.isFinite(expiresAt)||expiresAt<=Date.now())throw new Error("La sesión de Google ya venció. Inténtalo otra vez.");
+  USER={email,nombre:nombreNormalizado(perfil.name||email),idToken:response.credential,expiresAt};
+  ME=email;st.logged=true;st.tab="agenda";fm={};
+  render();
+  const tareas=[cargarDisponibilidad(HOY),cargarMisReservas()];
+  if(esAdmin())tareas.push(cargarReservasAdmin());
+  Promise.all(tareas).then(()=>{if(st.logged)render()});
+ }catch(error){if(aviso)aviso.textContent=error.message||"No se pudo iniciar sesión con Google."}
+}
+function prepararGoogleLogin(){
+ const aviso=$("#lerr");
+ if(!$("#googleSignIn"))return;
+ if(!GOOGLE_CLIENT_ID||GOOGLE_CLIENT_ID.indexOf("PEGA_AQUI")===0){
+  aviso.textContent="Falta configurar el cliente de inicio de sesión Google para publicar esta versión.";
+  return;
+ }
+ const listo=()=>{
+  const botonActual=$("#googleSignIn"),avisoActual=$("#lerr");
+  if(!botonActual)return;
+  if(!window.google||!google.accounts||!google.accounts.id){if(avisoActual)avisoActual.textContent="No se pudo cargar el inicio de sesión Google. Revisa tu conexión e inténtalo otra vez.";return}
+  if(!googleIdInitialized){google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:manejarCredencialGoogle,auto_select:false});googleIdInitialized=true}
+  google.accounts.id.renderButton(botonActual,{theme:"filled_blue",size:"large",shape:"pill",text:"signin_with",width:Math.min(320,botonActual.clientWidth||280)});
+ };
+ if(window.google&&google.accounts&&google.accounts.id){listo();return}
+ let script=$("#google-identity");
+ if(script){
+  if(script.dataset.failed==="true")aviso.textContent="No se pudo cargar el inicio de sesión Google. Revisa tu conexión.";
+  else if(!script.dataset.waiting){script.dataset.waiting="true";script.addEventListener("load",listo,{once:true})}
+  return;
+ }
+ script=document.createElement("script");script.id="google-identity";script.src="https://accounts.google.com/gsi/client";script.async=true;
+ script.onload=listo;script.onerror=()=>{script.dataset.failed="true";const actual=$("#lerr");if(actual)actual.textContent="No se pudo cargar el inicio de sesión Google. Revisa tu conexión.";};
+ document.head.appendChild(script);
+}
 
 /* ═════════ ESTILOS ═════════ */
-const EST={pendiente:["Pendiente","bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"],confirmada:["Confirmada","bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"],completada:["Completada","bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"],cancelada:["Cancelada","bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200"]};
+const EST={pendiente:["Pendiente","bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"],confirmada:["Aceptada","bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"],rechazada:["Rechazada","bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200"],completada:["Completada","bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"],cancelada:["Cancelada","bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"]};
 const badge=k=>`<span class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${EST[k][1]}">${EST[k][0]}</span>`;
 const card="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700";
 const inp="w-full rounded-xl border border-slate-300 bg-transparent px-3 py-2.5 text-base dark:border-slate-600";
@@ -230,20 +391,21 @@ function vLogin(msg){
  <h1 class="text-2xl font-bold">Sala de Enlaces</h1><p class="mt-1 text-indigo-200">Escuela Santa Filomena</p>
  <p class="mt-6 text-base text-indigo-100">Reserva la sala y reporta fallas de equipos en segundos.</p></div></div>
  <div class="space-y-3">${instBtn(false)}
-  <form id="lf" novalidate class="space-y-3">
-   <label for="nombre" class="block text-sm font-medium text-indigo-100">Nombre del profesor</label>
-   <input id="nombre" type="text" autocomplete="name" maxlength="100" placeholder="Nombre y apellido" value="${esc(fm.nombre||"")}" class="w-full rounded-2xl bg-white px-4 py-3.5 text-base text-slate-900 shadow-lg outline-none ring-2 ring-transparent focus:ring-emerald-400">
-   <div id="lerr" role="alert" class="rounded-xl bg-rose-500/90 px-3 py-2 text-center text-sm ${msg?"":"hidden"}">${msg||""}</div>
-   <button type="submit" class="w-full rounded-2xl bg-white py-4 text-lg font-semibold text-indigo-800 shadow-lg">Continuar</button>
-  </form>
-  <p class="text-center text-sm text-indigo-100">No necesitas contraseña. Escribe tu nombre y apellido. Tu nombre se usará para identificar tus solicitudes.</p>
+  <div class="rounded-2xl bg-white p-4 text-center text-slate-800 shadow-lg">
+   <h2 class="mb-1 text-lg font-semibold">Inicia sesión con tu cuenta institucional</h2>
+   <p class="mb-4 text-sm text-slate-600">Solo se aceptan cuentas Google autorizadas. Inicia sesión con la contraseña propia de esa cuenta; la app nunca la solicita ni la guarda. Tu correo permitirá asociar tus reservas y avisarte si se aceptan o rechazan.</p>
+   <div id="googleSignIn" class="flex min-h-11 justify-center"></div>
+   <div id="lerr" role="alert" class="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">${msg||""}</div>
+  </div>
   <p class="text-center text-sm text-indigo-200">Si necesitas ayuda, pide apoyo al Encargado de Enlaces.</p>
  </div></div>`;
+ prepararGoogleLogin();
 }
 
 /* ═════════ SHELL ═════════ */
 function shell(c){
- const T=[["agenda","📅","Agenda"],["mis","🗒️","Mis reservas"],["fallas","🔧","Reportar"]];
+ const T=[["agenda","📅","Agenda"],["horario","🕒","Horario"],["mis","🗒️","Mis reservas"],["fallas","🔧","Reportar"]];
+ if(esAdmin())T.push(["admin","🛠️","Encargado"]);
  $("#app").innerHTML=`<header class="sticky top-0 z-20 flex items-center gap-3 bg-indigo-700 px-4 py-3 text-white">
   <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1 shadow-sm"><img src="images/logo-escuela.png" alt="Escuela Santa Filomena" class="h-full w-full object-contain"></div>
   <div class="min-w-0 flex-1"><div class="truncate text-base font-semibold">Hola, ${esc(USER.nombre.split(" ")[0])} 👋</div><div class="truncate text-sm text-indigo-200">Sala de Enlaces</div></div>
@@ -281,6 +443,23 @@ function vAgenda(){
  <div class="mb-3 flex gap-1.5">${strip}</div><h2 class="mb-2 text-sm font-semibold capitalize text-slate-600 dark:text-slate-300">${fLarga(st.dia)}</h2><div class="space-y-2">${lista}</div>`;
 }
 
+function vHorario(){
+ const semanaActual=HORARIO_NOVIEMBRE.findIndex(s=>HOY>=s.desde&&HOY<=s.hasta);
+ const semanaInicial=semanaActual>=0?semanaActual:HORARIO_NOVIEMBRE.findIndex(s=>s.desde>HOY);
+ return`<h2 class="mb-1 text-lg font-semibold">Horario de uso de la Sala de Enlaces</h2>
+ <p class="mb-3 text-sm text-slate-600 dark:text-slate-300">Horario de noviembre de 2026, según la planilla compartida. Vista informativa: no cambia las reservas ni la disponibilidad.</p>
+ <div class="space-y-3">${HORARIO_NOVIEMBRE.map((semana,i)=>`<details class="${card}" ${i===semanaInicial?"open":""}>
+  <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-2 font-semibold"><span>Semana ${esc(semana.titulo)}</span><span class="text-xs font-normal text-slate-500">${semana.dias.length} ${semana.dias.length===1?"día":"días"}</span></summary>
+  <div class="mt-3 overflow-x-auto rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+   <table class="min-w-[640px] w-full border-collapse text-left text-xs">
+    <caption class="sr-only">Horario de uso, semana ${esc(semana.titulo)}</caption>
+    <thead><tr class="bg-indigo-50 text-indigo-900 dark:bg-slate-700 dark:text-indigo-100"><th scope="col" class="border-b border-slate-200 p-2 dark:border-slate-600">Horario</th>${semana.dias.map(d=>`<th scope="col" class="border-b border-slate-200 p-2 dark:border-slate-600">${esc(d)}</th>`).join("")}</tr></thead>
+    <tbody>${[...semana.filas].sort((a,b)=>a.hora.localeCompare(b.hora)).map(f=>`<tr><th scope="row" class="whitespace-nowrap border-b border-slate-200 p-2 font-semibold dark:border-slate-700">${esc(f.hora)}</th>${f.comun?`<td colspan="${semana.dias.length}" class="border-b border-slate-200 bg-slate-50 p-2 text-center dark:border-slate-700 dark:bg-slate-800">${esc(f.comun)}</td>`:f.celdas.map(c=>`<td class="min-w-28 border-b border-slate-200 p-2 dark:border-slate-700">${c?esc(c):`<span class="sr-only">Sin actividad registrada</span><span aria-hidden="true" class="text-slate-400">—</span>`}</td>`).join("")}</tr>`).join("")}</tbody>
+   </table>
+  </div>
+ </details>`).join("")}</div>`;
+}
+
 /* ═════════ MIS RESERVAS ═════════ */
 function vMis(){
  const mis=RS().filter(r=>r.e===ME).sort((a,b)=>b.f.localeCompare(a.f)||b.b-a.b);
@@ -289,10 +468,26 @@ function vMis(){
   const puedeCerrar=r.est==="confirmada"&&r.f<=HOY&&!r.cierre;
   return`<div class="${card}"><div class="flex items-start justify-between gap-2"><div><div class="text-sm font-semibold capitalize">${fLarga(r.f)}</div><div class="text-xs text-slate-500 dark:text-slate-400">Bloque ${r.b} (${BL[r.b-1][0]}) · ${esc(r.curso)} · ${r.pcs} PCs</div></div>${badge(r.est)}</div>
   ${r.esp?`<div class="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-900/30 dark:text-amber-100">⚡ <b>Solicitud de excepción:</b> ${esc(r.just)}</div>`:""}
+  ${r.respuesta?`<p class="mt-2 rounded-lg bg-slate-50 p-2 text-sm text-slate-700 dark:bg-slate-700 dark:text-slate-100"><b>Respuesta del encargado:</b> ${esc(r.respuesta)}</p>`:""}
   ${puedeCerrar?`<button data-cierre="${r.id}" class="mt-3 w-full rounded-xl bg-indigo-600 py-3 text-base font-semibold text-white">📝 Registrar cierre en este teléfono</button>`:""}
   ${r.cierre?`<div class="mt-2 text-sm text-emerald-700 dark:text-emerald-300">✓ Cierre guardado en este teléfono</div>`:""}</div>`};
- return`<div class="${card} mb-4 space-y-2 text-sm"><b>Importante</b><p>Las reservas que ves se guardan en este teléfono. Si lo cambias o reinstalas la app, podrían no aparecer aquí.</p><p>Esta versión no envía cancelaciones ni cierres al Encargado. Para cancelar una reserva o informar un cierre, comunícate directamente con él.</p></div><h2 class="mb-2 text-lg font-semibold">Próximas</h2><div class="mb-5 space-y-2">${prox.length?prox.map(card1).join(""):`<p class="py-4 text-center text-base text-slate-600 dark:text-slate-300">Aún no tienes reservas próximas.</p>`}</div>
+ return`<div class="${card} mb-4 space-y-2 text-sm"><b>Estado sincronizado</b><p>Las reservas se consultan desde tu cuenta institucional. La app actualiza los cambios del encargado al abrir esta sección o al tocar “Actualizar”.</p><p>Para cancelar una reserva o informar un cierre, comunícate directamente con el Encargado de Enlaces.</p><button id="refreshMine" class="w-full rounded-xl bg-indigo-600 py-2.5 font-semibold text-white" ${mineLoading?"disabled":""}>${mineLoading?"Actualizando…":"↻ Actualizar reservas"}</button>${mineError?`<p role="alert" class="text-rose-700 dark:text-rose-300">${esc(mineError)}</p>`:""}</div><h2 class="mb-2 text-lg font-semibold">Próximas</h2><div class="mb-5 space-y-2">${prox.length?prox.map(card1).join(""):mineLoading?`<p role="status" class="py-4 text-center text-base">Cargando tus reservas…</p>`:`<p class="py-4 text-center text-base text-slate-600 dark:text-slate-300">Aún no tienes reservas próximas.</p>`}</div>
  <h2 class="mb-2 text-lg font-semibold">Historial</h2><div class="space-y-2">${mis.filter(r=>!prox.includes(r)).map(card1).join("")||`<p class="text-base text-slate-600 dark:text-slate-300">Aún no hay historial.</p>`}</div>`;
+}
+
+function vAdmin(){
+ const cards=adminReservations.map(r=>`<article class="${card} space-y-2">
+  <div class="flex items-start justify-between gap-2"><div><h3 class="font-semibold">${esc(r.nombre)}</h3><p class="break-all text-xs text-slate-500">${esc(r.email)}</p></div>${badge("pendiente")}</div>
+  <p class="text-sm capitalize">${esc(fLarga(r.f))} · Bloque ${r.b} (${BL[r.b-1]?.[0]||"hora no disponible"})</p>
+  <p class="text-sm">${esc(r.curso)} · ${esc(r.asig)} · ${r.pcs} computadores</p>
+  ${r.esp?`<p class="rounded-lg bg-amber-50 p-2 text-sm text-amber-900 dark:bg-amber-900/30 dark:text-amber-100"><b>Solicitud especial:</b> ${esc(r.just)}</p>`:""}
+  <label for="motivo-${esc(r.id)}" class="block text-sm font-medium">Motivo de rechazo (obligatorio al rechazar)</label>
+  <textarea id="motivo-${esc(r.id)}" data-motivo="${esc(r.id)}" rows="2" maxlength="500" class="${inp}" placeholder="Explica brevemente la decisión"></textarea>
+  <div class="grid grid-cols-2 gap-2"><button data-adminestado="APROBADA" data-adminid="${esc(r.id)}" class="rounded-xl bg-emerald-600 py-2.5 font-semibold text-white">Aceptar</button><button data-adminestado="RECHAZADA" data-adminid="${esc(r.id)}" class="rounded-xl bg-rose-600 py-2.5 font-semibold text-white">Rechazar</button></div>
+ </article>`).join("");
+ return`<h2 class="mb-1 text-lg font-semibold">Solicitudes de reserva</h2><p class="mb-3 text-sm text-slate-600 dark:text-slate-300">Solo la cuenta encargada puede ver y cambiar estas solicitudes. Al aceptar o rechazar, el profesor recibe un correo.</p>
+ <div class="${card} mb-3 space-y-2"><button id="refreshAdmin" class="w-full rounded-xl bg-indigo-600 py-2.5 font-semibold text-white" ${adminLoading?"disabled":""}>${adminLoading?"Actualizando…":"↻ Actualizar solicitudes"}</button>${adminError?`<p role="alert" class="text-sm text-rose-700 dark:text-rose-300">${esc(adminError)}</p>`:""}</div>
+ <div class="space-y-3">${cards||(adminLoading?`<p role="status" class="py-4 text-center">Cargando solicitudes…</p>`:`<p class="py-4 text-center text-slate-600 dark:text-slate-300">No hay solicitudes pendientes.</p>`)}</div>`;
 }
 
 /* ═════════ REPORTE DE FALLAS ═════════ */
@@ -395,31 +590,26 @@ function confirma(titulo,detalle,solicitudId=""){
 /* ═════════ RENDER ═════════ */
 function render(){
  if(!st.logged)return vLogin();
- shell(st.tab==="agenda"?vAgenda():st.tab==="mis"?vMis():vFallas());
+ if(st.tab==="admin"&&!esAdmin())st.tab="agenda";
+ shell(st.tab==="agenda"?vAgenda():st.tab==="horario"?vHorario():st.tab==="mis"?vMis():st.tab==="admin"?vAdmin():st.tab==="fallas"?vFallas():vAgenda());
 }
 
 /* ═════════ EVENTOS ═════════ */
-document.addEventListener("submit",e=>{
- if(e.target.id!=="lf")return;e.preventDefault();
- const raw=$("#nombre").value;fm={nombre:raw};
- const v=validaNombre(raw);
- if(!v.ok)return vLogin(v.msg);
- USER={nombre:v.nombre};ME=v.nombre.toLocaleLowerCase("es-CL");
- let sesionNoGuardada=false;
- try{localStorage.setItem("se_user_v2",JSON.stringify(USER))}catch(x){sesionNoGuardada=true}
- fm={};st.logged=true;st.tab="agenda";
- const request=cargarDisponibilidad(HOY);render();
- if(sesionNoGuardada)toast("No se pudo guardar tu nombre; tendrás que escribirlo al volver a abrir la app.");
- request.then(()=>{if(st.logged)render()});
-});
-
 document.addEventListener("click",async e=>{
  if(e.target.id==="ov")return cerrar();
  const t=e.target.closest("button");if(!t)return;const d=t.dataset,id=t.id;
  if("font" in d){ajustarTexto(+d.font);return}
- if(id==="out"){st.logged=false;USER=null;ME="";fm={};try{localStorage.removeItem("se_user_v2")}catch(x){}cerrar();render()}
+ if(id==="out"){if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();st.logged=false;USER=null;ME="";fm={};cerrar();render()}
  else if(id==="retryAvailability"){const f=fm.f||st.dia,request=cargarDisponibilidad(f);if($("#ov").classList.contains("hidden"))render();else sheetRes();await request;if($("#ov").classList.contains("hidden"))render();else sheetRes()}
- else if(d.t){st.tab=d.t;fm={};if(d.t==="fallas")fm.incidencias=[{}];render();scrollTo(0,0)}
+ else if(d.t){
+  if(d.t==="admin"&&!esAdmin())return;
+  st.tab=d.t;fm={};if(d.t==="fallas")fm.incidencias=[{}];
+  const carga=d.t==="mis"?cargarMisReservas():d.t==="admin"?cargarReservasAdmin():null;
+  render();scrollTo(0,0);if(carga)carga.then(()=>{if(st.tab===d.t)render()});
+ }
+ else if(id==="refreshMine"){const carga=cargarMisReservas();render();await carga;render()}
+ else if(id==="refreshAdmin"){const carga=cargarReservasAdmin();render();await carga;render()}
+ else if(d.adminestado){if(!esAdmin())return;await cambiarEstadoReserva(d.adminid,d.adminestado)}
  else if(d.dia){st.dia=d.dia;const request=ensureAvailability(st.dia);render();request.then(()=>{if(st.tab==="agenda")render()})}
  else if(d.sem){st.sem+=+d.sem;st.dia=add(lunes0,st.sem*7);if(st.sem===0&&esHabil(HOY))st.dia=HOY;const request=ensureAvailability(st.dia);render();request.then(()=>{if(st.tab==="agenda")render()})}
  else if(d.res)abrirRes(+d.res);
@@ -487,6 +677,11 @@ document.addEventListener("change",e=>{
  if(e.target.id==="chF"){guardaCampos();fm.falla=e.target.checked;fm.tipo=null;fm.r?sheetCierre():sheetRes()}
  else if(e.target.id==="chE"){guardaCampos();fm.esp=e.target.checked;sheetRes()}
 });
+setInterval(async()=>{
+ if(document.hidden||!st.logged)return;
+ if(st.tab==="mis"){await cargarMisReservas();if(st.logged&&st.tab==="mis")render()}
+ else if(st.tab==="admin"&&esAdmin()){await cargarReservasAdmin();if(st.logged&&st.tab==="admin")render()}
+},60000);
 
 /* ═════════ Instalación PWA ═════════ */
 let dip=null,instOculto=false;
