@@ -81,14 +81,13 @@ body.booting{overflow:hidden}
 /* ═════════ CONFIGURACIÓN ═════════ */
 const PLAZO = 3;                       // Días hábiles de anticipación según el reglamento
 const API_URL = "https://script.google.com/macros/s/AKfycbzsmRArA48oOvmxDR7K6EugjjDYrZpDdhSksaohC2VSHf-K6Ih9vfMIy4FZuQ3cnjkCcA/exec";
-const INSTITUTIONAL_DOMAIN = "escuelasantafilomena.cl";
 const ADMIN_EMAIL = "enlaces@escuelasantafilomena.cl";
 const FERIADOS = ["2026-12-08","2026-12-25","2027-01-01"]; // Agrega aquí los feriados (AAAA-MM-DD); no cuentan como días hábiles
 
 /* ═════════ UTILIDADES ═════════ */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const MENSAJES_API={correo_institucional_requerido:"Usa un correo terminado en @escuelasantafilomena.cl.",nombre_requerido:"Escribe tu nombre y apellido.",codigo_espera:"Espera un minuto antes de pedir otro código.",limite_codigos:"Se alcanzó el límite de códigos. Inténtalo más tarde.",codigo_vencido:"El código venció. Solicita uno nuevo.",codigo_incorrecto:"El código no coincide. Revísalo e inténtalo otra vez.",codigo_bloqueado:"Se agotaron los intentos. Espera un minuto y solicita otro código.",no_se_pudo_enviar_codigo:"No se pudo enviar el correo. Inténtalo más tarde o pide ayuda al Encargado.",sesion_requerida:"Inicia sesión con un código enviado a tu correo institucional.",sesion_vencida:"Tu sesión venció. Inicia sesión nuevamente.",solo_administrador:"Solo la cuenta encargada puede realizar esta acción.",estado_no_pendiente:"Esta solicitud ya fue revisada. Actualiza la lista.",motivo_requerido:"Escribe un motivo breve para rechazar la reserva.",bloque_ocupado:"Ese horario acaba de ser reservado. Elige otro."};
+const MENSAJES_API={email_invalido:"Escribe un correo electrónico válido.",nombre_requerido:"Escribe tu nombre y apellido.",codigo_espera:"Espera un minuto antes de pedir otro código.",limite_codigos:"Se alcanzó el límite de códigos. Inténtalo más tarde.",codigo_vencido:"El código venció. Solicita uno nuevo.",codigo_incorrecto:"El código no coincide. Revísalo e inténtalo otra vez.",codigo_bloqueado:"Se agotaron los intentos. Espera un minuto y solicita otro código.",no_se_pudo_enviar_codigo:"No se pudo enviar el correo. Inténtalo más tarde o pide ayuda al Encargado.",sesion_requerida:"Inicia sesión con un código enviado a tu correo.",sesion_vencida:"Tu sesión venció. Inicia sesión nuevamente.",solo_administrador:"Solo la cuenta encargada puede realizar esta acción.",estado_no_pendiente:"Esta solicitud ya fue revisada. Actualiza la lista.",motivo_requerido:"Escribe un motivo breve para rechazar la reserva.",bloque_ocupado:"Ese horario acaba de ser reservado. Elige otro."};
 const mensajeApi=error=>MENSAJES_API[error]||error;
 const BL=[["08:00","08:45"],["08:45","09:30"],["09:45","10:30"],["10:30","11:15"],["11:30","12:15"],["12:15","13:00"],["14:00","14:45"],["14:45","15:30"]];
 const DN=["Lun","Mar","Mié","Jue","Vie"];
@@ -325,8 +324,8 @@ async function solicitarCodigoLogin(reenviar){
  const email=(reenviar?loginEmail:$("#loginEmail")?.value||"").trim().toLowerCase();
  const nombre=(reenviar?loginNombre:$("#loginNombre")?.value||"").trim().replace(/\s+/g," ");
  loginEmail=email;loginNombre=nombre;
- if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.slice(email.lastIndexOf("@")+1)!==INSTITUTIONAL_DOMAIN){
-  loginError="Escribe un correo terminado en @escuelasantafilomena.cl.";loginNotice="";render();return;
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+  loginError="Escribe un correo electrónico válido.";loginNotice="";render();return;
  }
  if(nombre.length<2){loginError="Escribe tu nombre y apellido.";loginNotice="";render();return}
  loginBusy=true;loginError="";loginNotice="";render();
@@ -375,10 +374,10 @@ function vLogin(){
  <p class="mt-6 text-base text-indigo-100">Reserva la sala y reporta fallas de equipos en segundos.</p></div></div>
  <div class="space-y-3">${instBtn(false)}
   <div class="rounded-2xl bg-white p-4 text-center text-slate-800 shadow-lg">
-   <h2 class="mb-1 text-lg font-semibold">Accede con tu correo institucional</h2>
+   <h2 class="mb-1 text-lg font-semibold">Accede con tu correo electrónico</h2>
    <p class="mb-4 text-sm text-slate-600">Te enviaremos un código de un solo uso para confirmar que tienes acceso al correo. No necesitas iniciar sesión con Google.</p>
    ${loginStep==="email"?`<label class="mb-3 block text-left text-sm font-medium" for="loginNombre">Nombre y apellido<input id="loginNombre" autocomplete="name" maxlength="80" value="${esc(loginNombre)}" class="${inp} mt-1 text-slate-800" placeholder="Tu nombre"></label>
-   <label class="mb-3 block text-left text-sm font-medium" for="loginEmail">Correo institucional<input id="loginEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" value="${esc(loginEmail)}" class="${inp} mt-1 text-slate-800" placeholder="nombre@escuelasantafilomena.cl"></label>
+   <label class="mb-3 block text-left text-sm font-medium" for="loginEmail">Correo electrónico<input id="loginEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" value="${esc(loginEmail)}" class="${inp} mt-1 text-slate-800" placeholder="nombre@ejemplo.com"></label>
    <button id="sendLoginCode" type="button" ${loginBusy?"disabled":""} class="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-60">${loginBusy?"Enviando código…":"Enviar código"}</button>`
    :`<p class="mb-3 text-sm text-slate-600">Escribe el código de 8 caracteres enviado a <b>${esc(loginEmail)}</b>.</p>
    <label class="mb-3 block text-left text-sm font-medium" for="loginCode">Código de acceso<input id="loginCode" type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="8" value="${esc(loginCode)}" class="${inp} mt-1 text-center font-mono uppercase tracking-[0.3em] text-slate-800" placeholder="AB12CD34"></label>
